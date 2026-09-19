@@ -26,6 +26,10 @@ Build a mobile app suite for measuring, calculating and displaying values in Sex
 - Learn: hero, intro, counting table, prefixes, time units, unit table, base cheatsheet.
 - Tested by testing agent (iteration_1): all flows pass.
 
+- Timer alarm (2026-06): looping alarm sound (expo-audio, generated `assets/sounds/alarm.wav`) + repeating vibration when done; scheduled local notification (expo-notifications) so it fires with the screen off; contextual permission card (Allow / Not now / Open Settings). Not testable on web.
+- Fixed-width digit rendering (`MonoDigits`) for clock, timer and stopwatch so separators no longer jitter.
+- Tested by testing agent (iteration_2): pass.
+
 ## Backlog
-- P1: Timer alarm sound/vibration loop when done; multiple timers; save favourite conversions.
+- P1: Multiple timers; save favourite conversions.
 - P2: Seximal date/calendar, share/copy results, widget-style clock, light theme option.

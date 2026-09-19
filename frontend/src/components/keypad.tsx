@@ -35,7 +35,8 @@ export function Keypad({ rows, onPress, keyHeight = 64, testIDPrefix = "key" }: 
                 testID={`${testIDPrefix}-${keyName(k.key)}`}
                 disabled={k.disabled}
                 onPress={() => {
-                  variant === "primary" ? haptics.light() : haptics.selection();
+                  if (variant === "primary") haptics.light();
+                  else haptics.selection();
                   onPress(k.key);
                 }}
                 style={({ pressed }) => [

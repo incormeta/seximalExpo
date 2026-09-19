@@ -1,0 +1,39 @@
+{
+  "summary": "Frontend-only regression + focused testing of the MonoDigits jitter fix and Timer alarm on Expo web (viewport 390x844). MonoDigits jitter fix verified on Clock, Timer-running and Stopwatch: separator ':' and '.' bounding boxes stay pixel-identical (x and width) across multiple ~300ms samples while surrounding digits change; every digit box has a constant width per character. Timer alarm flow: scrolling timer-wheel-minutes to 0 and timer-wheel-seconds to 1 correctly updates timer-picker-summary to '00:00:01 seximal ≈ 2.8 standard seconds'; after ~3s timer-done-banner appears, ring shows '00:00', timer-stop-alarm-button (label 'Stop') is rendered, and pressing it returns to the idle timer-picker. Timer notification prompt is correctly NOT rendered on web (Platform.OS === 'web' returns 'unsupported'). Pause/resume/cancel all work; timer-ends-at is shown while running/paused; remaining stays constant while paused. Regressions: Calc 4×5=32 works, Learn renders all 6 cards, Convert tab still opens. Only expected console warnings (pointerEvents deprecation, expo-notifications web push listener) - no red errors. One caveat to report: on web the alarm audio element is NOT visibly attached to the DOM (document.querySelectorAll('audio').length === 0 at ring time). Autoplay may be blocked and/or expo-audio on web routes through Web Audio API without a visible <audio> element; instructions said to report, not fail.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Timer alarm audio (web only)", "issue": "No <audio> element is created in the DOM when the alarm rings (document.querySelectorAll('audio').length === 0 both before and at done). Vibration/notifications correctly no-op on web. Audio may still play via Web Audio API but couldn't be observed. Per requester's note, this is not a failure on web (autoplay policy may block); confirm on a native build.", "affected_testIDs": ["timer-done-banner", "timer-stop-alarm-button"]}
+    ],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "verified_flows": [
+    "Jitter Clock: 5 samples 320ms apart - separator ':' pinned at x=111.703 w=23.141 and x=215.406 w=23.141; every digit width=40.281px",
+    "Jitter Timer running: 5 samples - ':' pinned at x=185.813 w=18.359; instants '.' pinned at x=180.969 w=5.516; digit position stable per index while glyphs change (5→4→3→2)",
+    "Jitter Stopwatch: 4 samples - elapsed ':' at x=137.406 w=21.594, '.' at x=234.188 w=18.391; current-lap ':' at x=305.703 w=5.938, '.' at x=332.297 w=5.047 - all identical across samples",
+    "Timer picker: scrolling timer-wheel-minutes to y=0 and timer-wheel-seconds to y=44 updates summary to '00:00:01 seximal ≈ 2.8 standard seconds'",
+    "Timer alarm: after start, timer-done-banner appears within ~3s, timer-remaining shows '00:00', timer-stop-alarm-button (Stop) renders, pressing it returns to timer-picker",
+    "Timer pause/resume: timer-pause-button, timer-ends-at, timer-resume-button all visible in correct states; remaining stable during pause; timer-cancel-button returns to idle",
+    "Notification prompt: timer-notification-prompt NOT rendered on web (correct)",
+    "Regressions: Calc 4×5=32; Learn cards intro/counting/prefixes/time/units/bases all render; Convert tab loads",
+    "Console: only expected expo-notifications web warning and pointerEvents deprecation; no red errors"
+  ],
+  "test_report_links": ["/app/test_reports/iteration_2.json"],
+  "action_items": [
+    "(Optional / web-only) Confirm on a native build that expo-audio actually starts playback and looping. On web, no <audio> DOM element was created when the alarm rings; if audio is required on web preview, consider fallback to HTMLAudioElement or Web Audio buffer, or explicitly document that alarm sound is native-only."
+  ],
+  "critical_code_review_comments": [
+    "src/components/mono-digits.tsx - `useAudioPlayer(require(...alarm.wav))` in src/utils/alarm.ts is created eagerly at hook mount for every SeximalTimer render; fine on native, but on web this may hold an AudioContext across the app lifetime. Consider lazy creation on first ring if bundle size / permissions become an issue.",
+    "src/utils/alarm.ts:100 `Vibration.vibrate(VIBRATION_PATTERN, true)` - the boolean second arg is deprecated in newer RN; still works but is worth updating to a repeatCount API when possible. Non-blocking.",
+    "src/components/time/seximal-timer.tsx:107 `Math.min(width - spacing.lg * 4, 300)` - fine, but the ring text uses MonoDigits with maxWidth=ringSize-56; verified this fits '00:00:01' cleanly."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100%"},
+  "seed_data_creation": "None - offline app.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Viewport 390x844. Wheel picker inner scroll container is scrolled via evaluate: set scrollTop = index * 44 on the first descendant of [data-testid=timer-wheel-<h|m|s>] with overflowY auto/scroll, then dispatch a 'scroll' event. Use base-6 index for seconds (index 1 -> displays '01' seximal -> ~2.8 std sec). On web: expo-notifications and vibration are no-ops (by design); the alarm's <audio> element is not attached to DOM so use native build to verify sound. MonoDigits renders each glyph as its own <Text>; jitter is validated by comparing bounding-box x/width across time samples of the container's children.",
+  "rca_of_issue": "N/A - both features (jitter fix + timer alarm flow) work as intended on web. Only observation: alarm audio playback cannot be observed via DOM audio elements on web; deferred to native build validation."
+}

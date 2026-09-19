@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#000000"
       },
-      "package": "com.emergent.basehub.nurc49"
+      "package": "com.emergent.basehub.nurc49",
+      "permissions": ["android.permission.VIBRATE", "android.permission.SCHEDULE_EXACT_ALARM", "android.permission.POST_NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
@@ -36,6 +37,14 @@
       ],
       "expo-font",
       "expo-image",
+      "expo-audio",
+      [
+        "expo-notifications",
+        {
+          "color": "#F59E0B",
+          "defaultChannel": "seximal-timer"
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       "expo-status-bar",

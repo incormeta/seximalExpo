@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { Text, View, useWindowDimensions } from "react-native";
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 
+import { MonoDigits } from "@/src/components/mono-digits";
 import { pad6 } from "@/src/seximal/base";
-import { INSTANT_MS, formatStandardClock, nowSeximal } from "@/src/seximal/time";
+import { INSTANT_MS, formatClock, formatStandardClock, nowSeximal } from "@/src/seximal/time";
 import { fonts, makeStyles, spacing, useTheme } from "@/src/theme";
 
 export function SeximalClock() {
@@ -39,16 +40,22 @@ export function SeximalClock() {
   return (
     <View style={styles.root} testID="clock-view">
       <View style={styles.digital}>
-        <Text style={styles.time} testID="clock-digital">
-          {pad6(t.hours)}
-          <Text style={styles.colon}>:</Text>
-          {pad6(t.minutes)}
-          <Text style={styles.colon}>:</Text>
-          {pad6(t.seconds)}
-        </Text>
-        <Text style={styles.instants} testID="clock-instants">
-          .{pad6(t.instants)}
-        </Text>
+        <MonoDigits
+          text={formatClock(t)}
+          fontSize={88}
+          maxWidth={width - spacing.lg * 2 - 70}
+          color={colors.onSurface}
+          separatorColor={colors.brand}
+          testID="clock-digital"
+        />
+        <MonoDigits
+          text={`.${pad6(t.instants)}`}
+          fontSize={34}
+          lineHeight={60}
+          color={colors.brandSecondary}
+          fontFamily={fonts.displayMedium}
+          testID="clock-instants"
+        />
       </View>
       <View style={styles.legend}>
         <Text style={styles.legendItem}>hours · 6⁶ inst</Text>
@@ -111,9 +118,6 @@ export function SeximalClock() {
 const useStyles = makeStyles((colors) => ({
   root: { alignItems: "center", gap: spacing.lg, paddingVertical: spacing.lg },
   digital: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center" },
-  time: { fontFamily: fonts.display, fontSize: 88, lineHeight: 92, color: colors.onSurface, letterSpacing: 1 },
-  colon: { color: colors.brand },
-  instants: { fontFamily: fonts.displayMedium, fontSize: 34, lineHeight: 60, color: colors.brandSecondary, marginLeft: spacing.xs },
   legend: { flexDirection: "row", gap: spacing.lg, marginTop: -spacing.sm },
   legendItem: { fontFamily: fonts.text, fontSize: 12, color: colors.muted },
   footer: { alignItems: "center", gap: spacing.xs },
