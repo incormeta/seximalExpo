@@ -1,0 +1,152 @@
+{
+  "app_name": "Seximal",
+  "personality": "7 Dark-First Utility DARK",
+  "personality_one_liner": "A high-performance, dark-mode command center focused on high-contrast operational clarity, speed, and precision for Base-6 (Seximal) computing and timekeeping.",
+  "color": {
+    "surface": "#09090B",
+    "onSurface": "#FAFAFA",
+    "surfaceSecondary": "#18181B",
+    "onSurfaceSecondary": "#FAFAFA",
+    "surfaceTertiary": "#27272A",
+    "onSurfaceTertiary": "#FAFAFA",
+    "surfaceInverse": "#FAFAFA",
+    "onSurfaceInverse": "#09090B",
+    "brand": "#F59E0B",
+    "onBrand": "#09090B",
+    "brandPrimary": "#D97706",
+    "onBrandPrimary": "#000000",
+    "brandSecondary": "#FBBF24",
+    "onBrandSecondary": "#000000",
+    "brandTertiary": "#452202",
+    "onBrandTertiary": "#FDE68A",
+    "success": "#10B981",
+    "onSuccess": "#000000",
+    "warning": "#F59E0B",
+    "onWarning": "#000000",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#A1A1AA",
+    "onInfo": "#000000",
+    "border": "#27272A",
+    "borderStrong": "#3F3F46",
+    "divider": "#27272A",
+    "muted": "#A1A1AA"
+  },
+  "typography": {
+    "displayFontFamily": "Barlow Condensed",
+    "textFontFamily": "DM Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Use tight, operational spacing. Dividers and tonal separation over heavy shadows. Maintain comfortable hit areas (min 44pt) without wasting screen real estate.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": false,
+    "do's": ["Use standard flat/tonal surfaces to maintain pure utility and high contrast"],
+    "dont's": ["Do not use blur or glass on data/calculator screens; clarity and speed beat aesthetics here"]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Calc",
+      "purpose": "A base-6 only calculator with keypad 0-5 and operators.",
+      "states": {
+        "loading": "Centered brand-colored activity indicator.",
+        "empty": "N/A - Keypad always visible.",
+        "error": "N/A"
+      },
+      "layout": "Top half displays current input (large Barlow Condensed) and calculation history (smaller, muted text above it). Bottom half is a rigid flex grid keypad. Numbers 0-5 and operators. Operators use brandSecondary tinted buttons or text. Use brandPrimary for the equals/evaluate button. Instant touch haptics on every key press."
+    },
+    {
+      "name": "Convert",
+      "purpose": "Convertible-inspired unit and base converter.",
+      "states": {
+        "loading": "Skeleton of the stacked conversion cards.",
+        "empty": "N/A",
+        "error": "Standard error overlay with retry."
+      },
+      "layout": "Two vertically stacked, distinct structural blocks ('From' at top, 'To' at bottom) separated by a subtle divider. No standard wheel pickers. Tap a block to slide open an inline/nested list to pick Category (Length/Time/Mass) -> Unit -> Prefix. The numerical output updates instantaneously in the bottom block. Use surfaceSecondary for the blocks and brandPrimary for the currently selected unit highlight."
+    },
+    {
+      "name": "Time",
+      "purpose": "Seximal clock, timer, and stopwatch based on iOS Clock app.",
+      "states": {
+        "loading": "Skeleton of clock metrics.",
+        "empty": "Empty state for saved timers.",
+        "error": "Error loading time functions."
+      },
+      "layout": "Segmented control at the top to toggle (Clock / Timer / Stopwatch). Clock: Digital display using massive Barlow Condensed digits, showing Hours, New Minutes, New Seconds. Timer: Large circular progress ring in brandPrimary, counting down. A muted contextual 'Ends at X' label above the countdown. Stopwatch: Millisecond precision with drag-cancellable buttons. Split laps listed below in a scrolling list, emphasizing the fastest/slowest laps using success/error color tints on the text."
+    },
+    {
+      "name": "Learn",
+      "purpose": "Educational reference for Seximal math and units.",
+      "states": {
+        "loading": "Skeleton cards.",
+        "empty": "N/A",
+        "error": "Standard text error."
+      },
+      "layout": "Editorial-meets-utility. A top hero image (abstract math/geometry) with a gradient scrim. Followed by a scrolling feed of `surfaceSecondary` cards explaining base-6, base conversions, and the custom unit list (instants, bocks, nifa-, kila-). Use tables or strictly aligned flex rows for the unit references so it's easy to scan."
+    }
+  ],
+  "images": {
+    "learn_hero": {
+      "url": "https://images.unsplash.com/photo-1709377195538-5522ed0f9e10?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHxkYXJrJTIwYWJzdHJhY3QlMjBtYXRoJTIwZ2VvbWV0cnklMjBvcmFuZ2UlMjBoaWdobGlnaHR8ZW58MHx8fHwxNzg5ODM1NDcxfDA&ixlib=rb-4.1.0&q=85",
+      "alt": "Dark abstract math geometry with warm amber glowing curves"
+    },
+    "timer_accent": {
+      "url": "https://images.pexels.com/photos/10963919/pexels-photo-10963919.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Abstract long-exposure light painting spiral in amber/orange"
+    }
+  },
+  "haptics": {
+    "keypad_press": "selection",
+    "evaluate_press": "impactLight",
+    "timer_start": "impactMedium",
+    "stopwatch_lap": "selection",
+    "tab_switch": "selection",
+    "converter_unit_select": "impactLight"
+  },
+  "instructions_to_main_agent": [
+    "Design constraint: Implement Tab Navigation with exactly 4 tabs (Calc, Convert, Time, Learn). Use Phosphor icons.",
+    "Style constraint: Strictly follow the 7 Dark-First Utility DARK personality. No glassmorphism on the utility screens, rely on #09090B surface and #18181B surfaceSecondary tonal separation. Use the amber accent aggressively for primary actions and active states.",
+    "Typography constraint: Use Barlow Condensed (or equivalent high-impact condensed font loaded via expo-font) for all numeric displays (Calc output, Clock time, Timer digits) and DM Sans for standard UI text.",
+    "Calculator logic: Custom numpad must only contain 0-5. Calculations must be processed in base-6 logic, meaning after 5 comes 10, not 6.",
+    "Converter logic: Use a 'Convertible app' style sliding nested list rather than native modal pickers. Support Base conversions (Seximal <-> Decimal, Dozenal, Binary, Hexadecimal).",
+    "Converter prefixes & units: Embed the custom conversion rates provided in the prompt (e.g., 1 instant = 0.07716 sec, 1 thumb = 2.29867 inches, etc.) and handle Seximal prefixes (nifa-, kila-, etc. which represent powers of 6).",
+    "Time logic constraint: The clock shows base-6 time. 1 hour = 6^6 instants, 1 new minute = 6^4 instants (36 per hour), 1 new second = 6^2 instants (36 per new minute). The layout should take strong inspiration from iOS Clock (high contrast, circular timer progress, contextual end-times).",
+    "Do not use generic blue anywhere. The app must stay heavily anchored in obsidian grey and amber (#F59E0B)."
+  ]
+}

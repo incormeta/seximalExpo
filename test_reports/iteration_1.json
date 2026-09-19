@@ -1,0 +1,39 @@
+{
+  "summary": "Comprehensive frontend testing of the offline Expo/React Native 'Seximal' app on mobile viewport 390x844. All 4 tabs (Calc, Convert, Time, Learn) load with expected testIDs. All base-6 calculator flows work (4x5=32, 5+1=10, 10/3=2, 1/2=0.3, 3-5=-2, div0 error, backspace, history, clear-history). Convert-Units flow verified for time, length and temperature with correct alt-decimal values. Convert-Number-bases correctly converts seximal 244 -> decimal 100, dozenal 84, binary 1100100, hex 64; tapping a result row correctly switches input base. Time tab: digital seximal clock hours match standard hour in base 6 (24_6 = 16_10). Timer starts/pauses/resumes/cancels correctly. Stopwatch increments, records laps, resets. Learn cards all render. Prefix chips (nifa/kila/none) appear only while unit picker is expanded, as designed. No deprecated Expo packages detected (no expo-av, expo-barcode-scanner, or expo-background-fetch). One minor floating-point precision drift noted (see minor issues).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "minor_observations": [
+    {"area": "Convert - kila prefix", "detail": "1 kilainstant -> second shows seximal 243.55551 and alt '99.99936 decimal' instead of exact '244' / '100'. Root cause: INSTANT_S constant is stored as 0.07716 (truncated) so 1296 * 0.07716 = 99.99936. Consider using a higher-precision constant (e.g. 100/1296 = 0.0771604938...) or rounding display for whole-power-of-6 multiples. Impact: cosmetic, results still readable."},
+    {"area": "Calc decimal hint", "detail": "calc-decimal-hint testID exists but content is empty when the display shows a whole seximal number (e.g. 0). It only populates for non-integer values. Not a bug, just noting for future tests."},
+    {"area": "Convert unit id naming", "detail": "IDs use short codes: second='s', inch='in', fahrenheit='f', celsius='celce'. Testers should reference /app/frontend/src/seximal/units.ts when writing selectors like convert-from-unit-option-<id>."}
+  ],
+  "verified_flows": [
+    "Calc: 4x5=32, 5+1=10, 10/3=2, 1/2=0.3, 3-5=-2, 1/0 -> 'Cannot divide by zero', backspace 12->1, history appended (calc-history-item-0)",
+    "Convert Units: 1 instant -> second = 0.0244 seximal (alt 0.07716 decimal); 1 thumb -> inch alt 2.29867 decimal; 100 (decimal) celce -> fahrenheit alt 212 decimal; swap works; input-base toggle switches keypad to decimal exposing keys 6-9; prefix chips nifa/kila/none present when picker expanded",
+    "Convert Bases: input '244' seximal -> dec 100, doz 84, bin 1100100, hex 64; tapping bases-result-10 changes input base and reformats value to '100'; bases-input-chip-{6,10,12,2,16} all present",
+    "Time Clock: clock-digital hours in base 6 match clock-standard hours in decimal (24_6 == 16_10)",
+    "Time Timer: default 00:05:00 shown as timer-remaining, start -> countdown, pause/resume/cancel buttons present and switch state, timer-ends-at rendered",
+    "Time Stopwatch: elapsed increments 00:00.00 -> 00:00.33, lap records stopwatch-lap-1, reset restores 00:00.00",
+    "Learn: all 6 cards (intro, counting, prefixes, time, units, bases) render"
+  ],
+  "test_report_links": ["/app/test_reports/iteration_1.json"],
+  "action_items": [
+    "(Optional/cosmetic) Improve kila-prefix precision: use exact ratio (e.g. divide by 1296 for kila-instant -> seconds) so 1 kilainstant renders as exact '244' seximal / '100' decimal instead of 243.55551 / 99.99936. Consider computing seximal prefix conversions in rational/BigInt form when factor is a power of 6."
+  ],
+  "critical_code_review_comments": [
+    "src/seximal/time.ts uses INSTANT_MS = 77.16 (truncated). Multiplied over 6^4 = 1296 instants this drifts to 99.99936 s instead of 100.00000 s. Consider deriving INSTANT_MS from MINUTE_MS/INSTANTS_PER_MINUTE to avoid drift.",
+    "base-converter.tsx filters out the current base row (b.id !== base) so bases-result-6-value does not exist while seximal is the input base - matches UX intent; make sure future tests do not treat this as missing."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a", "frontend": "100%"},
+  "seed_data_creation": "None - offline app, no auth or data seeding required.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "App is fully offline (no backend). Use viewport 390x844. Tab testIDs: tab-calc, tab-convert, tab-time, tab-learn. Unit ids use short codes: second='s', inch='in', fahrenheit='f', celsius='celce', thumb='thumb', instant='instant'. Prefix chips (convert-from-prefix-<name>) only appear while the unit dropdown is expanded. The seximal-input-base row in the bases converter does NOT include a bases-result-6-value (by design - it's filtered out). To test 1 kilainstant, first tap convert-from-unit-button to expand and then tap convert-from-prefix-kila within the expanded panel.",
+  "rca_of_issue": "N/A - no functional bugs found. Only cosmetic precision drift for large seximal prefix multipliers, RCA in critical_code_review_comments."
+}
