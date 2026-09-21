@@ -1,39 +1,48 @@
-import { useEffect, useState } from "react";
-import { Text, View, useWindowDimensions } from "react-native";
-import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
+import { useEffect, useRef, useState } from "react";
+import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { MonoDigits } from "@/src/components/mono-digits";
+import { ClockFace, FACES } from "@/src/components/time/clock-face";
 import { pad6 } from "@/src/seximal/base";
 import { INSTANT_MS, formatClock, formatStandardClock, nowSeximal } from "@/src/seximal/time";
-import { fonts, makeStyles, spacing, useTheme } from "@/src/theme";
+import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
+import { haptics } from "@/src/utils/haptics";
+import { storage } from "@/src/utils/storage";
+
+const FACE_KEY = "seximal.clock.face";
 
 export function SeximalClock() {
   const styles = useStyles();
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const [now, setNow] = useState(() => new Date());
+  const [face, setFace] = useState(0);
+  const pagerRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), INSTANT_MS);
     return () => clearInterval(id);
   }, []);
 
-  const t = nowSeximal(now);
-  const size = Math.min(width - spacing.lg * 4, 300);
-  const c = size / 2;
-  const r = c - 12;
+  useEffect(() => {
+    storage.getItem(FACE_KEY, 0).then((v) => {
+      const idx = typeof v === "number" && v >= 0 && v < FACES.length ? v : 0;
+      setFace(idx);
+      requestAnimationFrame(() => pagerRef.current?.scrollTo({ x: idx * width, animated: false }));
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Hands: hour hand sweeps the full 24h (seximal "40") day; minute/second hands use 36 divisions.
-  const hourFrac = (t.hours + t.minutes / 36 + t.seconds / 1296) / 24;
-  const minFrac = (t.minutes + t.seconds / 36 + t.instants / 1296) / 36;
-  const secFrac = (t.seconds + t.instants / 36) / 36;
-  const hand = (frac: number, len: number) => {
-    const a = frac * Math.PI * 2 - Math.PI / 2;
-    return { x2: c + Math.cos(a) * len, y2: c + Math.sin(a) * len };
+  const t = nowSeximal(now);
+  const size = Math.min(width - spacing.lg * 2, 360);
+
+  const onPagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const idx = Math.min(FACES.length - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / width)));
+    if (idx !== face) {
+      setFace(idx);
+      storage.setItem(FACE_KEY, idx);
+    }
   };
-  const h = hand(hourFrac, r * 0.5);
-  const m = hand(minFrac, r * 0.72);
-  const s = hand(secFrac, r * 0.85);
 
   const dateLabel = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
 
@@ -63,46 +72,44 @@ export function SeximalClock() {
         <Text style={styles.legendItem}>seconds · 6² inst</Text>
       </View>
 
-      <Svg width={size} height={size} testID="clock-analog">
-        <Circle cx={c} cy={c} r={r} stroke={colors.border} strokeWidth={1.5} fill={colors.surfaceSecondary} />
-        {Array.from({ length: 36 }).map((_, i) => {
-          const a = (i / 36) * Math.PI * 2 - Math.PI / 2;
-          const major = i % 6 === 0;
-          const inner = r - (major ? 14 : 7);
-          return (
-            <Line
-              key={i}
-              x1={c + Math.cos(a) * inner}
-              y1={c + Math.sin(a) * inner}
-              x2={c + Math.cos(a) * (r - 2)}
-              y2={c + Math.sin(a) * (r - 2)}
-              stroke={major ? colors.onSurface : colors.borderStrong}
-              strokeWidth={major ? 2.5 : 1}
+      <ScrollView
+        ref={pagerRef}
+        horizontal
+        pagingEnabled
+        snapToInterval={width}
+        decelerationRate="fast"
+        showsHorizontalScrollIndicator={false}
+        onScroll={onPagerScroll}
+        scrollEventThrottle={16}
+        contentOffset={{ x: face * width, y: 0 }}
+        style={{ width, flexGrow: 0 }}
+        testID="clock-face-pager"
+      >
+        {FACES.map((f) => (
+          <View key={f.id} style={[styles.page, { width }]}>
+            <ClockFace face={f.id} size={size} time={t} />
+          </View>
+        ))}
+      </ScrollView>
+      <View style={styles.pagerFooter}>
+        <View style={styles.dots} testID="clock-face-dots">
+          {FACES.map((f, i) => (
+            <Pressable
+              key={f.id}
+              testID={`clock-face-dot-${f.id}`}
+              hitSlop={10}
+              onPress={() => {
+                haptics.selection();
+                pagerRef.current?.scrollTo({ x: i * width, animated: true });
+              }}
+              style={[styles.dot, i === face && styles.dotActive]}
             />
-          );
-        })}
-        {[0, 1, 2, 3, 4, 5].map((k) => {
-          const a = (k / 6) * Math.PI * 2 - Math.PI / 2;
-          const rr = r - 30;
-          return (
-            <SvgText
-              key={k}
-              x={c + Math.cos(a) * rr}
-              y={c + Math.sin(a) * rr + 6}
-              fill={colors.muted}
-              fontSize={16}
-              fontFamily={fonts.displayMedium}
-              textAnchor="middle"
-            >
-              {k === 0 ? "0" : `${k}0`}
-            </SvgText>
-          );
-        })}
-        <Line x1={c} y1={c} x2={h.x2} y2={h.y2} stroke={colors.onSurface} strokeWidth={6} strokeLinecap="round" />
-        <Line x1={c} y1={c} x2={m.x2} y2={m.y2} stroke={colors.onSurface} strokeWidth={4} strokeLinecap="round" />
-        <Line x1={c} y1={c} x2={s.x2} y2={s.y2} stroke={colors.brand} strokeWidth={2} strokeLinecap="round" />
-        <Circle cx={c} cy={c} r={5} fill={colors.brand} />
-      </Svg>
+          ))}
+        </View>
+        <Text style={styles.faceName} testID="clock-face-name">
+          {FACES[face].name} · {FACES[face].description}
+        </Text>
+      </View>
 
       <View style={styles.footer}>
         <Text style={styles.footerLabel}>STANDARD TIME</Text>
@@ -120,6 +127,12 @@ const useStyles = makeStyles((colors) => ({
   digital: { flexDirection: "row", alignItems: "flex-end", justifyContent: "center" },
   legend: { flexDirection: "row", gap: spacing.lg, marginTop: -spacing.sm },
   legendItem: { fontFamily: fonts.text, fontSize: 12, color: colors.muted },
+  page: { alignItems: "center", justifyContent: "center" },
+  pagerFooter: { alignItems: "center", gap: spacing.sm, marginTop: -spacing.sm },
+  dots: { flexDirection: "row", gap: spacing.sm, alignItems: "center", height: 20 },
+  dot: { width: 8, height: 8, borderRadius: radius.pill, backgroundColor: colors.borderStrong },
+  dotActive: { backgroundColor: colors.brand, width: 20 },
+  faceName: { fontFamily: fonts.text, fontSize: 12, color: colors.muted },
   footer: { alignItems: "center", gap: spacing.xs },
   footerLabel: { fontFamily: fonts.textSemiBold, fontSize: 11, color: colors.muted, letterSpacing: 1.2 },
   footerTime: { fontFamily: fonts.displayMedium, fontSize: 28, color: colors.onSurface },

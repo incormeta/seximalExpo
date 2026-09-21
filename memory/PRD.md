@@ -30,6 +30,8 @@ Build a mobile app suite for measuring, calculating and displaying values in Sex
 - Fixed-width digit rendering (`MonoDigits`) for clock, timer and stopwatch so separators no longer jitter.
 - Tested by testing agent (iteration_2): pass.
 
+- Clock faces (2026-06): three swipeable analog faces (Face 1/2 semi-diurnal 12-hour, Face 3 diurnal 24-hour inner ring), page dots, selection persisted. Tested (iteration_3): pass.
+
 ## Backlog
 - P1: Multiple timers; save favourite conversions.
 - P2: Seximal date/calendar, share/copy results, widget-style clock, light theme option.
