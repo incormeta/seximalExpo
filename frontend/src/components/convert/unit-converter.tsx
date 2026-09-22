@@ -144,9 +144,8 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
             }
           }}
           onChangeText={onChange}
-          keyboardType="decimal-pad"
-          inputMode="decimal"
-          selectTextOnFocus
+          keyboardType="numbers-and-punctuation"
+          selectTextOnFocus={!isInput}
           placeholder="0"
           placeholderTextColor={colors.muted}
           autoCorrect={false}
