@@ -17,6 +17,18 @@ const HISTORY_KEY = "seximal.calc.history";
 
 const ROWS: KeyDef[][] = [
   [
+    { key: "xʸ", variant: "action" },
+    { key: "ʸ√x", variant: "action" },
+    { key: "ln(x)", variant: "action" },
+    { key: "eˣ", variant: "action" },
+  ],
+  [
+    { key: "e", variant: "action" },
+    { key: "π", variant: "action" },
+    { key: "φ", variant: "action" },
+    { key: "τ", variant: "action" },
+  ],
+  [
     { key: "AC", variant: "action" },
     { key: "⌫", icon: "backspace-outline", variant: "action" },
     { key: "÷", variant: "operator" },
@@ -134,7 +146,7 @@ export default function CalcScreen() {
       </View>
 
       <View style={[styles.keypadWrap, { paddingBottom: bottomChrome + spacing.lg }]}>
-        <Keypad rows={ROWS} onPress={onKey} testIDPrefix="calc-key" />
+        <Keypad rows={ROWS} onPress={onKey} keyHeight={54} testIDPrefix="calc-key" />
       </View>
     </View>
   );

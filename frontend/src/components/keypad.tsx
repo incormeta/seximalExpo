@@ -87,6 +87,13 @@ function keyName(k: string) {
     ".": "point",
     "⌫": "backspace",
     "±": "negate",
+    "xʸ": "power",
+    "ʸ√x": "root",
+    "ln(x)": "natural-log",
+    "eˣ": "e-power",
+    "π": "pi",
+    "φ": "phi",
+    "τ": "tau",
     AC: "clear",
   };
   return map[k] ?? k.toLowerCase();
