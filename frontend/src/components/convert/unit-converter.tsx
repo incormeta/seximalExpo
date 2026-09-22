@@ -1,10 +1,9 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated";
 
 import { ChipRow } from "@/src/components/chip-row";
-import { KeyDef, Keypad } from "@/src/components/keypad";
 import { formatBase, formatDecimal, parseBase } from "@/src/seximal/base";
 import {
   CATEGORIES,
@@ -21,18 +20,7 @@ import { haptics } from "@/src/utils/haptics";
 
 type Side = "from" | "to";
 type InputBase = 6 | 10;
-
-const SEX_ROWS: KeyDef[][] = [
-  [{ key: "3" }, { key: "4" }, { key: "5" }, { key: "⌫", icon: "backspace-outline", variant: "action" }],
-  [{ key: "0" }, { key: "1" }, { key: "2" }, { key: "AC", variant: "action" }],
-  [{ key: "." }, { key: "6", disabled: true }, { key: "7", disabled: true }, { key: "SWAP", icon: "swap-vertical", variant: "primary" }],
-];
-const DEC_ROWS: KeyDef[][] = [
-  [{ key: "7" }, { key: "8" }, { key: "9" }, { key: "⌫", icon: "backspace-outline", variant: "action" }],
-  [{ key: "4" }, { key: "5" }, { key: "6" }, { key: "AC", variant: "action" }],
-  [{ key: "1" }, { key: "2" }, { key: "3" }, { key: "SWAP", icon: "swap-vertical", variant: "primary" }],
-  [{ key: "0", span: 2 }, { key: ".", span: 1 }, { key: "00", span: 1 }],
-];
+const MAGNITUDES = [...PREFIXES.filter((prefix) => prefix.power >= 0), ...PREFIXES.filter((prefix) => prefix.power < 0).reverse()];
 
 export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
   const styles = useStyles();
@@ -45,13 +33,18 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
   const [toPrefix, setToPrefix] = useState<Prefix>(NO_PREFIX);
   const [expanded, setExpanded] = useState<Side | null>(null);
   const [inputBase, setInputBase] = useState<InputBase>(6);
+  const [inputSide, setInputSide] = useState<Side>("from");
   const [raw, setRaw] = useState("1");
 
   const fromUnit: Unit = category.units.find((u) => u.id === fromUnitId) ?? category.units[0];
   const toUnit: Unit = category.units.find((u) => u.id === toUnitId) ?? category.units[1];
 
-  const inputValue = parseBase(raw || "0", inputBase) ?? 0;
-  const result = convertValue(inputValue, fromUnit, fromPrefix, toUnit, toPrefix);
+  const enteredValue = parseBase(raw || "0", inputBase) ?? 0;
+  const fromValue =
+    inputSide === "from"
+      ? enteredValue
+      : convertValue(enteredValue, toUnit, toPrefix, fromUnit, fromPrefix);
+  const toValue = convertValue(fromValue, fromUnit, fromPrefix, toUnit, toPrefix);
 
   const selectCategory = (id: string) => {
     const cat = CATEGORIES.find((c) => c.id === id)!;
@@ -61,6 +54,9 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
     setFromPrefix(NO_PREFIX);
     setToPrefix(NO_PREFIX);
     setExpanded(null);
+    setInputSide("from");
+    setRaw("1");
+    setInputBase(6);
   };
 
   const swap = () => {
@@ -69,22 +65,32 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
     setToUnitId(fromUnitId);
     setFromPrefix(toPrefix);
     setToPrefix(fromPrefix);
-    setRaw(formatBase(result, inputBase, 6));
+    setRaw(formatBase(inputSide === "from" ? toValue : fromValue, inputBase, 6));
+    setInputSide(inputSide === "from" ? "to" : "from");
   };
 
-  const onKey = (key: string) => {
-    if (key === "SWAP") return swap();
-    if (key === "AC") return setRaw("");
-    if (key === "⌫") return setRaw((r) => r.slice(0, -1));
-    if (key === "." && raw.includes(".")) return;
-    if (raw.replace(".", "").length >= 12) return;
-    setRaw((r) => (r === "0" && key !== "." ? key : r + key));
+  const onChange = (text: string) => {
+    const maxDigit = inputBase === 6 ? 5 : 9;
+    let hasPoint = false;
+    const cleaned = text
+      .split("")
+      .filter((character, index) => {
+        if (character === "-" && index === 0) return true;
+        if (character === "." && !hasPoint) {
+          hasPoint = true;
+          return true;
+        }
+        return character >= "0" && character <= String(maxDigit);
+      })
+      .join("")
+      .slice(0, 14);
+    setRaw(cleaned);
   };
 
   const toggleBase = () => {
     haptics.selection();
     const next: InputBase = inputBase === 6 ? 10 : 6;
-    setRaw(inputValue === 0 ? "" : formatBase(inputValue, next, 6));
+    setRaw(enteredValue === 0 ? "" : formatBase(enteredValue, next, 6));
     setInputBase(next);
   };
 
@@ -94,20 +100,17 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
     const setUnit = side === "from" ? setFromUnitId : setToUnitId;
     const setPrefix = side === "from" ? setFromPrefix : setToPrefix;
     const isOpen = expanded === side;
-    const value = side === "from" ? inputValue : result;
-    const mainText = side === "from" ? raw || "0" : formatBase(result, 6, 6);
-    const altText =
-      side === "from"
-        ? inputBase === 6
-          ? `${formatDecimal(value, 8)} decimal`
-          : `${formatBase(value, 6, 6)} seximal`
-        : `${formatDecimal(value, 8)} decimal`;
+    const value = side === "from" ? fromValue : toValue;
+    const isInput = inputSide === side;
+    const shownBase = isInput ? inputBase : 6;
+    const mainText = isInput ? raw : formatBase(value, 6, 6);
+    const altText = shownBase === 6 ? `${formatDecimal(value, 8)} decimal` : `${formatBase(value, 6, 6)} seximal`;
 
     return (
       <View style={styles.block} testID={`convert-${side}-block`}>
         <View style={styles.blockHead}>
           <Text style={styles.blockLabel}>{side === "from" ? "FROM" : "TO"}</Text>
-          {side === "from" ? (
+          {isInput ? (
             <Pressable onPress={toggleBase} style={styles.baseToggle} testID="convert-input-base-toggle">
               <Text style={styles.baseToggleText}>{inputBase === 6 ? "Seximal input" : "Decimal input"}</Text>
               <Ionicons name="repeat-outline" size={14} color={colors.brandSecondary} />
@@ -130,17 +133,53 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
           </View>
           <Ionicons name={isOpen ? "chevron-up" : "chevron-down"} size={20} color={colors.brand} />
         </Pressable>
-        <Text
-          style={[styles.value, side === "from" && styles.valueFrom]}
-          numberOfLines={1}
-          adjustsFontSizeToFit
+        <TextInput
+          style={[styles.value, isInput && styles.valueInput]}
+          value={mainText || ""}
+          onFocus={() => {
+            if (!isInput) {
+              setInputSide(side);
+              setInputBase(6);
+              setRaw(formatBase(value, 6, 6));
+            }
+          }}
+          onChangeText={onChange}
+          keyboardType="numbers-and-punctuation"
+          selectTextOnFocus={!isInput}
+          placeholder="0"
+          placeholderTextColor={colors.muted}
+          autoCorrect={false}
+          returnKeyType="done"
           testID={`convert-${side}-value`}
-        >
-          {mainText}
-        </Text>
+        />
         <Text style={styles.altValue} testID={`convert-${side}-alt`}>
           {altText}
         </Text>
+
+        {unit.seximal ? (
+          <View style={styles.prefixWrap} testID={`convert-${side}-magnitude`}>
+            <Text style={styles.prefixTitle}>ORDER OF MAGNITUDE</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prefixRow}>
+              {MAGNITUDES.map((p) => {
+                const active = p.power === prefix.power;
+                return (
+                  <Pressable
+                    key={p.power}
+                    testID={`convert-${side}-prefix-${p.name || "none"}`}
+                    onPress={() => {
+                      haptics.selection();
+                      setPrefix(p);
+                    }}
+                    style={[styles.prefixChip, active && styles.prefixChipActive]}
+                  >
+                    <Text style={[styles.prefixName, active && styles.prefixNameActive]}>{p.name || "unit"}</Text>
+                    <Text style={styles.prefixPow}>{p.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {isOpen ? (
           <Animated.View entering={FadeInDown.duration(160)} exiting={FadeOutUp.duration(120)} style={styles.picker}>
@@ -154,6 +193,7 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
                     haptics.light();
                     setUnit(u.id);
                     if (!u.seximal) setPrefix(NO_PREFIX);
+                    setExpanded(null);
                   }}
                   style={[styles.pickerRow, active && styles.pickerRowActive]}
                 >
@@ -168,30 +208,6 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
                 </Pressable>
               );
             })}
-            {unit.seximal ? (
-              <View style={styles.prefixWrap}>
-                <Text style={styles.prefixTitle}>PREFIX · powers of six</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.prefixRow}>
-                  {PREFIXES.map((p) => {
-                    const active = p.power === prefix.power;
-                    return (
-                      <Pressable
-                        key={p.power}
-                        testID={`convert-${side}-prefix-${p.name || "none"}`}
-                        onPress={() => {
-                          haptics.selection();
-                          setPrefix(p);
-                        }}
-                        style={[styles.prefixChip, active && styles.prefixChipActive]}
-                      >
-                        <Text style={[styles.prefixName, active && styles.prefixNameActive]}>{p.name || "none"}</Text>
-                        <Text style={styles.prefixPow}>{p.label}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null}
           </Animated.View>
         ) : null}
       </View>
@@ -206,7 +222,11 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
         onChange={selectCategory}
         testID="convert-category-chip"
       />
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomPadding + spacing.md }]}
+        keyboardShouldPersistTaps="handled"
+      >
         {renderBlock("from")}
         <View style={styles.swapRow}>
           <View style={styles.swapLine} />
@@ -217,9 +237,6 @@ export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
         </View>
         {renderBlock("to")}
       </ScrollView>
-      <View style={[styles.keypad, { paddingBottom: bottomPadding }]}>
-        <Keypad rows={inputBase === 6 ? SEX_ROWS : DEC_ROWS} onPress={onKey} keyHeight={52} testIDPrefix="convert-key" />
-      </View>
     </View>
   );
 }
@@ -231,7 +248,8 @@ const useStyles = makeStyles((colors) => ({
   block: {
     backgroundColor: colors.surfaceSecondary,
     borderRadius: radius.lg,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     gap: spacing.xs,
   },
   blockHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -246,11 +264,19 @@ const useStyles = makeStyles((colors) => ({
     backgroundColor: colors.brandTertiary,
   },
   baseToggleText: { fontFamily: fonts.textMedium, fontSize: 12, color: colors.onBrandTertiary },
-  unitRow: { flexDirection: "row", alignItems: "center", minHeight: 44, gap: spacing.sm },
+  unitRow: { flexDirection: "row", alignItems: "center", minHeight: 36, gap: spacing.sm },
   unitName: { fontFamily: fonts.textSemiBold, fontSize: 18, color: colors.onSurfaceSecondary, textTransform: "capitalize" },
   unitSymbol: { fontFamily: fonts.text, fontSize: 13, color: colors.muted },
-  value: { fontFamily: fonts.display, fontSize: 44, lineHeight: 50, color: colors.onSurface, textAlign: "right" },
-  valueFrom: { color: colors.brandSecondary },
+  value: {
+    fontFamily: fonts.display,
+    fontSize: 38,
+    lineHeight: 44,
+    minHeight: 48,
+    paddingVertical: 0,
+    color: colors.onSurface,
+    textAlign: "right",
+  },
+  valueInput: { color: colors.brandSecondary },
   altValue: { fontFamily: fonts.text, fontSize: 13, color: colors.muted, textAlign: "right" },
   picker: { marginTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.divider, paddingTop: spacing.sm },
   pickerRow: {
@@ -267,11 +293,11 @@ const useStyles = makeStyles((colors) => ({
   pickerSymbol: { fontFamily: fonts.text, fontSize: 13, color: colors.muted },
   sexBadge: { backgroundColor: colors.brandTertiary, borderRadius: radius.sm, paddingHorizontal: 6, paddingVertical: 2 },
   sexBadgeText: { fontFamily: fonts.textSemiBold, fontSize: 10, color: colors.onBrandTertiary, letterSpacing: 1 },
-  prefixWrap: { marginTop: spacing.sm, gap: spacing.sm },
+  prefixWrap: { marginTop: spacing.xs, gap: spacing.xs },
   prefixTitle: { fontFamily: fonts.textSemiBold, fontSize: 11, color: colors.muted, letterSpacing: 1.2 },
   prefixRow: { gap: spacing.sm },
   prefixChip: {
-    height: 44,
+    height: 38,
     paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceTertiary,
@@ -285,8 +311,7 @@ const useStyles = makeStyles((colors) => ({
   prefixName: { fontFamily: fonts.textSemiBold, fontSize: 13, color: colors.onSurfaceTertiary },
   prefixNameActive: { color: colors.onBrandTertiary },
   prefixPow: { fontFamily: fonts.text, fontSize: 11, color: colors.muted },
-  swapRow: { flexDirection: "row", alignItems: "center", height: 56, gap: spacing.md },
+  swapRow: { flexDirection: "row", alignItems: "center", height: 44, gap: spacing.md },
   swapLine: { flex: 1, height: 1, backgroundColor: colors.divider },
   swapBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
-  keypad: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.divider },
 }));
