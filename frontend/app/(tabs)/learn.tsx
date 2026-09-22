@@ -32,6 +32,18 @@ function Row({ a, b, c, head }: { a: string; b: string; c?: string; head?: boole
   );
 }
 
+function UnitRow({ quantity, unit, si, us, head }: { quantity: string; unit: string; si: string; us: string; head?: boolean }) {
+  const styles = useStyles();
+  return (
+    <View style={[styles.row, head && styles.rowHead]}>
+      <Text style={[styles.unitQuantity, head && styles.cellHead]}>{quantity}</Text>
+      <Text style={[styles.unitName, head && styles.cellHead]}>{unit}</Text>
+      <Text style={[styles.unitConversion, head && styles.cellHead]}>{si}</Text>
+      <Text style={[styles.unitConversion, head && styles.cellHead]}>{us}</Text>
+    </View>
+  );
+}
+
 export default function LearnScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -127,10 +139,11 @@ export default function LearnScreen() {
           </Card>
 
           <Card title="Seximal units" testID="learn-card-units">
-            <Row a="Quantity" b="Unit" c="Equals" head />
+            <UnitRow quantity="Quantity" unit="Unit" si="SI" us="US Customary" head />
             {CATEGORIES.map((c) => {
               const u = c.units.find((x) => x.seximal)!;
-              return <Row key={c.id} a={c.name} b={`1 ${u.name}`} c={UNIT_EQUALS[c.id]} />;
+              const conversion = UNIT_CONVERSIONS[c.id];
+              return <UnitRow key={c.id} quantity={c.name} unit={`1 ${u.name}`} {...conversion} />;
             })}
           </Card>
 
@@ -148,20 +161,20 @@ export default function LearnScreen() {
   );
 }
 
-const UNIT_EQUALS: Record<string, string> = {
-  time: "0.07716 s",
-  length: "2.29867 in",
-  area: "5.28388 in²",
-  volume: "199.0345 mL",
-  speed: "0.75668 m/s",
-  accel: "9.80664 m/s²",
-  mass: "199.0345 g",
-  force: "1.95186 N",
-  pressure: "0.08304 psi",
-  energy: "0.11396 J",
-  temp: "1 °C",
-  freq: "12.96 Hz",
-  power: "1.47694 W",
+const UNIT_CONVERSIONS: Record<string, { si: string; us: string }> = {
+  time: { si: "0.07716 s", us: "0.07716 sec" },
+  length: { si: "5.83862 cm", us: "2.29867 in" },
+  area: { si: "34.08948 cm²", us: "5.28388 in²" },
+  volume: { si: "199.0345 mL", us: "6.73016 fl oz" },
+  speed: { si: "0.75668 m/s", us: "1.69264 mph" },
+  accel: { si: "9.80664 m/s²", us: "32.17402 ft/s²" },
+  mass: { si: "199.0345 g", us: "7.02074 oz" },
+  force: { si: "1.95186 N", us: "0.43880 lbf" },
+  pressure: { si: "572.54065 Pa", us: "0.08304 psi" },
+  energy: { si: "0.11396 J", us: "0.08405 ft⋅lbf" },
+  temp: { si: "1 °C", us: "1.8 °F" },
+  freq: { si: "12.96 Hz", us: "12.96 cycles/s" },
+  power: { si: "1.47694 W", us: "0.00198 hp" },
 };
 
 const useStyles = makeStyles((colors) => ({
@@ -182,5 +195,8 @@ const useStyles = makeStyles((colors) => ({
   cellA: { flex: 1.2, fontFamily: fonts.textMedium, fontSize: 14, color: colors.onSurfaceSecondary },
   cellB: { flex: 1, fontFamily: fonts.displayMedium, fontSize: 18, color: colors.brandSecondary },
   cellC: { flex: 1.1, fontFamily: fonts.text, fontSize: 14, color: colors.muted, textAlign: "right" },
+  unitQuantity: { flex: 1, fontFamily: fonts.textMedium, fontSize: 12, color: colors.onSurfaceSecondary },
+  unitName: { flex: 1, fontFamily: fonts.displayMedium, fontSize: 14, color: colors.brandSecondary },
+  unitConversion: { flex: 1.15, fontFamily: fonts.text, fontSize: 12, color: colors.muted, textAlign: "right" },
   cellHead: { fontFamily: fonts.textSemiBold, fontSize: 11, color: colors.muted, letterSpacing: 1 },
 }));
