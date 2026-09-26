@@ -2,7 +2,6 @@ import { useState } from "react";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ScreenHeader } from "@/src/components/screen-header";
 import { SegmentedControl } from "@/src/components/segmented-control";
 import { SeximalClock } from "@/src/components/time/seximal-clock";
 import { SeximalStopwatch } from "@/src/components/time/seximal-stopwatch";
@@ -20,20 +19,18 @@ export default function TimeScreen() {
 
   return (
     <View style={styles.screen} testID="time-screen">
-      <ScreenHeader title="Time" testID="time-header">
-        <View style={styles.segmentWrap}>
-          <SegmentedControl<Mode>
-            options={[
-              { value: "clock", label: "Clock" },
-              { value: "timer", label: "Timer" },
-              { value: "stopwatch", label: "Stopwatch" },
-            ]}
-            value={mode}
-            onChange={setMode}
-            testID="time-mode"
-          />
-        </View>
-      </ScreenHeader>
+      <View style={[styles.segmentWrap, { paddingTop: insets.top + spacing.sm }]}>
+        <SegmentedControl<Mode>
+          options={[
+            { value: "clock", label: "Clock" },
+            { value: "timer", label: "Timer" },
+            { value: "stopwatch", label: "Stopwatch" },
+          ]}
+          value={mode}
+          onChange={setMode}
+          testID="time-mode"
+        />
+      </View>
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={{ paddingBottom: bottomChrome + spacing.lg }}
@@ -53,7 +50,7 @@ export default function TimeScreen() {
 
 const useStyles = makeStyles((colors) => ({
   screen: { flex: 1, backgroundColor: colors.surface },
-  segmentWrap: { paddingTop: spacing.sm },
+  segmentWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
   scroll: { flex: 1 },
   hidden: { display: "none" },
 }));
