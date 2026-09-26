@@ -1,5 +1,5 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { formatBase, formatDecimal, parseBase } from "@/src/seximal/base";
@@ -23,6 +23,18 @@ function groupFor(unit: Unit): UnitGroup {
   return "Metric & SI";
 }
 
+const IMPERIAL_IDS = new Set([
+  "in", "ft", "yd", "mi", "in2", "ft2", "yd2", "acre", "mi2", "floz", "tsp", "tbsp", "cup", "pt", "qt", "gal",
+  "in3", "ft3", "yd3", "mph", "fps", "oz", "lb", "st", "short-ton", "lbf", "ozf", "kip", "psi", "inhg", "f", "r", "hp", "btuh", "ftlbs", "btu", "ftlb",
+]);
+
+function groupFor(unit: Unit): UnitGroup {
+  if (unit.seximal) return "Seximal";
+  if (IMPERIAL_IDS.has(unit.id)) return "US & Imperial";
+  if (["day", "week", "yr", "nmi", "kn", "mach", "g", "atm", "torr", "rpm", "bpm"].includes(unit.id)) return "Other";
+  return "Metric & SI";
+}
+
 export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPadding: number; onEditingChange?: (editing: boolean) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -31,15 +43,11 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
   const [fromUnitId, setFromUnitId] = useState("m");
   const [toUnitId, setToUnitId] = useState("ft");
   const [inputSide, setInputSide] = useState<Side>("from");
-  const [inputBase, setInputBase] = useState<InputBase>(10);
+  const [inputBase, setInputBase] = useState<InputBase>(6);
   const [raw, setRaw] = useState("1");
   const [dimensionsOpen, setDimensionsOpen] = useState(false);
   const [unitPicker, setUnitPicker] = useState<Side | null>(null);
   const [editing, setEditing] = useState(false);
-
-  useEffect(() => {
-    onEditingChange?.(editing);
-  }, [editing, onEditingChange]);
 
   const fromUnit = category.units.find((u) => u.id === fromUnitId) ?? category.units[0];
   const toUnit = category.units.find((u) => u.id === toUnitId) ?? category.units[1];
@@ -60,11 +68,8 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
 
   const startEditing = (side: Side) => {
     const value = side === "from" ? fromValue : toValue;
-    const unit = side === "from" ? fromUnit : toUnit;
-    const preferredBase: InputBase = unit.seximal ? 6 : 10;
     setInputSide(side);
-    setInputBase(preferredBase);
-    setRaw(preferredBase === 6 ? formatBase(value, 6, 6) : formatDecimal(value, 8));
+    setRaw(formatBase(value, inputBase, 6));
     setEditing(true);
   };
 
@@ -99,14 +104,16 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
     const unit = side === "from" ? fromUnit : toUnit;
     const value = side === "from" ? fromValue : toValue;
     const active = side === inputSide;
-    const displayBase: InputBase = active ? inputBase : unit.seximal ? 6 : 10;
-    const displayed = active ? raw || "0" : displayBase === 6 ? formatBase(value, 6, 6) : formatDecimal(value, 8);
+    const displayed = active ? raw || "0" : formatBase(value, inputBase, 6);
     return (
-      <View style={[styles.valuePanel, editing && styles.valuePanelEditing, active && styles.valuePanelActive]} testID={`convert-${side}-block`}>
+      <View style={[styles.valuePanel, active && styles.valuePanelActive]} testID={`convert-${side}-block`}>
         <View style={styles.panelTop}>
           <Pressable style={styles.unitButton} onPress={() => setUnitPicker(side)} testID={`convert-${side}-unit-button`}>
             <View style={styles.unitIcon}><Text style={styles.unitIconText}>{unit.symbol}</Text></View>
-            <View style={styles.unitCopy}><Text style={styles.unitName} testID={`convert-${side}-unit-name`}>{unit.name}</Text></View>
+            <View style={styles.unitCopy}>
+              <Text style={styles.panelEyebrow}>{side === "from" ? "CONVERT FROM" : "CONVERT TO"}</Text>
+              <Text style={styles.unitName} testID={`convert-${side}-unit-name`}>{unit.name}</Text>
+            </View>
             <Ionicons name="chevron-down" size={19} color={colors.brandSecondary} />
           </Pressable>
         </View>
@@ -115,7 +122,7 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
           <Text style={styles.symbol}>{unit.symbol}</Text>
         </Pressable>
         <Text style={styles.altValue} testID={`convert-${side}-alt`}>
-          {displayBase === 6 ? `${formatDecimal(value, 8)} decimal` : `${formatBase(value, 6, 6)} seximal`}
+          {inputBase === 6 ? `${formatDecimal(value, 8)} decimal` : `${formatBase(value, 6, 6)} seximal`}
         </Text>
       </View>
     );
@@ -123,13 +130,13 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
 
   return (
     <View style={styles.root}>
-      <Pressable style={[styles.dimensionHeader, editing && styles.dimensionHeaderEditing]} onPress={() => setDimensionsOpen(true)} testID="convert-dimension-button">
+      <Pressable style={styles.dimensionHeader} onPress={() => setDimensionsOpen(true)} testID="convert-dimension-button">
         <View style={styles.dimensionIcon}><Ionicons name={category.icon as any} size={24} color={colors.onBrand} /></View>
-        <View style={{ flex: 1 }}>{!editing ? <Text style={styles.dimensionOverline}>DIMENSION</Text> : null}<Text style={styles.dimensionTitle}>{category.name}</Text></View>
-        {!editing ? <><Text style={styles.changeText}>Change</Text><Ionicons name="chevron-down" size={20} color={colors.brandSecondary} /></> : null}
+        <View style={{ flex: 1 }}><Text style={styles.dimensionOverline}>DIMENSION</Text><Text style={styles.dimensionTitle}>{category.name}</Text></View>
+        <Text style={styles.changeText}>Change</Text><Ionicons name="chevron-down" size={20} color={colors.brandSecondary} />
       </Pressable>
 
-      <ScrollView scrollEnabled={!editing} style={styles.scroll} contentContainerStyle={[styles.content, editing && styles.contentEditing, { paddingBottom: editing ? spacing.sm : bottomPadding + spacing.lg }]}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: editing ? spacing.md : bottomPadding + spacing.lg }]}>
         {panel("from")}
         <View style={styles.swapWrap}>
           <View style={styles.line} />
@@ -142,11 +149,6 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
       {editing ? <ConversionKeypad base={inputBase} onToggleBase={toggleBase} onPress={keyPress} /> : null}
       <DimensionModal visible={dimensionsOpen} selected={catId} onClose={() => setDimensionsOpen(false)} onSelect={selectCategory} />
       <UnitModal side={unitPicker} units={category.units} selected={unitPicker === "from" ? fromUnit.id : toUnit.id} onClose={() => setUnitPicker(null)} onSelect={(unit) => {
-        if (unitPicker === inputSide) {
-          const preferredBase: InputBase = unit.seximal ? 6 : 10;
-          setRaw(preferredBase === 6 ? formatBase(entered, 6, 6) : formatDecimal(entered, 8));
-          setInputBase(preferredBase);
-        }
         if (unitPicker === "from") setFromUnitId(unit.id); else setToUnitId(unit.id);
         setUnitPicker(null);
       }} />
@@ -183,11 +185,10 @@ function UnitModal({ side, units, selected, onClose, onSelect }: { side: Side | 
 }
 
 const useStyles = makeStyles((colors) => ({
-  root: { flex: 1 }, scroll: { flex: 1 }, content: { padding: spacing.lg }, contentEditing: { paddingTop: spacing.xs, paddingBottom: spacing.sm },
+  root: { flex: 1 }, scroll: { flex: 1 }, content: { padding: spacing.lg },
   dimensionHeader: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, minHeight: 70, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.borderStrong, flexDirection: "row", alignItems: "center", gap: spacing.md },
-  dimensionHeaderEditing: { minHeight: 52, paddingVertical: spacing.xs, borderWidth: 0, backgroundColor: colors.surface, marginBottom: 0 },
   dimensionIcon: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }, dimensionOverline: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.5 }, dimensionTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 27 }, changeText: { color: colors.brandSecondary, fontFamily: fonts.textSemiBold, fontSize: 12 },
-  valuePanel: { borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, padding: spacing.md }, valuePanelEditing: { paddingVertical: spacing.sm }, valuePanelActive: { borderColor: colors.brandPrimary }, panelTop: { flexDirection: "row" }, unitButton: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }, unitIcon: { minWidth: 42, height: 34, paddingHorizontal: 7, borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary, justifyContent: "center", alignItems: "center" }, unitIconText: { color: colors.brandSecondary, fontFamily: fonts.display, fontSize: 18 }, unitCopy: { flex: 1 }, panelEyebrow: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.3 }, unitName: { color: colors.onSurfaceSecondary, fontFamily: fonts.textSemiBold, fontSize: 16, textTransform: "capitalize" }, numberButton: { minHeight: 62, flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", gap: spacing.sm }, value: { color: colors.onSurface, fontFamily: fonts.displayRegular, fontSize: 48, maxWidth: "82%" }, valueActive: { color: colors.brandSecondary }, symbol: { color: colors.muted, fontFamily: fonts.displayRegular, fontSize: 25 }, altValue: { textAlign: "right", color: colors.muted, fontFamily: fonts.text, fontSize: 13 }, swapWrap: { height: 48, flexDirection: "row", alignItems: "center", gap: spacing.md }, line: { height: 1, backgroundColor: colors.divider, flex: 1 }, swap: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  valuePanel: { borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, padding: spacing.md }, valuePanelActive: { borderColor: colors.brandPrimary }, panelTop: { flexDirection: "row" }, unitButton: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }, unitIcon: { minWidth: 42, height: 34, paddingHorizontal: 7, borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary, justifyContent: "center", alignItems: "center" }, unitIconText: { color: colors.brandSecondary, fontFamily: fonts.display, fontSize: 18 }, unitCopy: { flex: 1 }, panelEyebrow: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.3 }, unitName: { color: colors.onSurfaceSecondary, fontFamily: fonts.textSemiBold, fontSize: 16, textTransform: "capitalize" }, numberButton: { minHeight: 62, flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", gap: spacing.sm }, value: { color: colors.onSurface, fontFamily: fonts.displayRegular, fontSize: 48, maxWidth: "82%" }, valueActive: { color: colors.brandSecondary }, symbol: { color: colors.muted, fontFamily: fonts.displayRegular, fontSize: 25 }, altValue: { textAlign: "right", color: colors.muted, fontFamily: fonts.text, fontSize: 13 }, swapWrap: { height: 48, flexDirection: "row", alignItems: "center", gap: spacing.md }, line: { height: 1, backgroundColor: colors.divider, flex: 1 }, swap: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
   keypad: { backgroundColor: colors.surfaceSecondary, borderTopWidth: 1, borderTopColor: colors.borderStrong, padding: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm }, keypadTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xs }, keypadTitle: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.3 }, baseButton: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.brandTertiary, borderRadius: radius.pill, paddingHorizontal: spacing.md, height: 28 }, baseText: { color: colors.onBrandTertiary, fontFamily: fonts.textSemiBold, fontSize: 11 }, keysBody: { flexDirection: "row", gap: spacing.sm }, digitGrid: { flex: 3, gap: 5, justifyContent: "space-between" }, keyRow: { flexDirection: "row", gap: 5, flex: 1 }, key: { flex: 1, minHeight: 38, borderRadius: radius.sm, backgroundColor: colors.keyDigit, alignItems: "center", justifyContent: "center" }, keyText: { color: colors.onSurface, fontFamily: fonts.displayMedium, fontSize: 25 }, pressed: { opacity: .55 }, actionColumn: { width: 82, gap: 5 }, actionKey: { minHeight: 38, flex: 1, backgroundColor: colors.surfaceTertiary, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" }, actionText: { color: colors.brandSecondary, fontFamily: fonts.displayMedium, fontSize: 23 }, doneKey: { flex: 2, minHeight: 50, borderRadius: radius.sm, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }, doneText: { color: colors.onBrand, fontFamily: fonts.textSemiBold, fontSize: 13 },
   modalRoot: { flex: 1, justifyContent: "flex-end" }, scrim: { ...({ position: "absolute", inset: 0 } as any), backgroundColor: colors.scrim }, sheet: { maxHeight: "88%", backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: colors.borderStrong, paddingTop: spacing.lg }, sheetHead: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, sheetEyebrow: { color: colors.brandSecondary, fontFamily: fonts.textSemiBold, letterSpacing: 1.5, fontSize: 11 }, sheetTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 30 }, close: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   dimensionGrid: { padding: spacing.lg, paddingTop: spacing.xs, flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, paddingBottom: spacing["3xl"] }, dimensionCard: { width: "48%", minHeight: 76, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceTertiary, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.sm }, dimensionCardActive: { borderColor: colors.brand, backgroundColor: colors.brandTertiary }, categoryIcon: { width: 36, height: 36, borderRadius: radius.sm, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" }, categoryIconActive: { backgroundColor: colors.brand }, categoryName: { flex: 1, color: colors.onSurfaceTertiary, fontFamily: fonts.textSemiBold, fontSize: 15 }, categoryNameActive: { color: colors.onBrandTertiary },
