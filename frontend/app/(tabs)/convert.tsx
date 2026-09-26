@@ -15,10 +15,11 @@ export default function ConvertScreen() {
   const insets = useSafeAreaInsets();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const [mode, setMode] = useState<Mode>("units");
+  const [unitEntryActive, setUnitEntryActive] = useState(false);
 
   return (
     <View style={styles.screen} testID="convert-screen">
-      <View style={[styles.segmentWrap, { paddingTop: insets.top + spacing.sm }]}>
+      {!unitEntryActive ? <View style={[styles.segmentWrap, { paddingTop: insets.top + spacing.sm }]}>
         <SegmentedControl<Mode>
           options={[
             { value: "units", label: "Units" },
@@ -28,9 +29,9 @@ export default function ConvertScreen() {
           onChange={setMode}
           testID="convert-mode"
         />
-      </View>
+      </View> : <View style={{ height: insets.top }} />}
       {mode === "units" ? (
-        <UnitConverter bottomPadding={bottomChrome + spacing.lg} />
+        <UnitConverter bottomPadding={bottomChrome + spacing.lg} onEditingChange={setUnitEntryActive} />
       ) : (
         <BaseConverter bottomPadding={bottomChrome} />
       )}

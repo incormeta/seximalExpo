@@ -289,6 +289,61 @@ export const CATEGORIES: Category[] = [
       { id: "ftlbs", name: "foot-pound per second", symbol: "ft⋅lbf/s", factor: 1.3558179483314004 },
     ],
   },
+  {
+    id: "torque",
+    name: "Torque",
+    icon: "sync-outline",
+    baseSymbol: "N⋅m",
+    units: [
+      { id: "turn", name: "turnforce", symbol: "trf", factor: 1, seximal: true },
+      { id: "nm", name: "newton metre", symbol: "N⋅m", factor: 1 },
+      { id: "kgfm", name: "kilogram-force metre", symbol: "kgf⋅m", factor: 9.80665 },
+      { id: "lbfft", name: "pound-force foot", symbol: "lbf⋅ft", factor: 1.3558179483314 },
+      { id: "lbfin", name: "pound-force inch", symbol: "lbf⋅in", factor: 0.1129848290276 },
+    ],
+  },
+  {
+    id: "flow",
+    name: "Flow",
+    icon: "water-outline",
+    baseSymbol: "L/s",
+    units: [
+      { id: "stream", name: "stream", symbol: "str", factor: 1, seximal: true },
+      { id: "lps", name: "litre per second", symbol: "L/s", factor: 1 },
+      { id: "lpm", name: "litre per minute", symbol: "L/min", factor: 1 / 60 },
+      { id: "m3h", name: "cubic metre per hour", symbol: "m³/h", factor: 1000 / 3600 },
+      { id: "gpm", name: "US gallon per minute", symbol: "gal/min", factor: 3.785411784 / 60 },
+      { id: "cfm", name: "cubic foot per minute", symbol: "ft³/min", factor: 28.316846592 / 60 },
+    ],
+  },
+  {
+    id: "fuel",
+    name: "Fuel Economy",
+    icon: "water-outline",
+    baseSymbol: "km/L",
+    units: [
+      { id: "cruise", name: "cruise", symbol: "crz", factor: 1, seximal: true },
+      { id: "kml", name: "kilometre per litre", symbol: "km/L", factor: 1 },
+      { id: "mpgus", name: "miles per US gallon", symbol: "mpg US", factor: 0.425143707 },
+      { id: "mpgimp", name: "miles per imperial gallon", symbol: "mpg imp", factor: 0.35400619 },
+    ],
+  },
+  {
+    id: "data",
+    name: "Data",
+    icon: "server-outline",
+    baseSymbol: "B",
+    units: [
+      { id: "hexbyte", name: "hexbyte", symbol: "hB", factor: 1, seximal: true },
+      { id: "bit", name: "bit", symbol: "bit", factor: 0.125 },
+      { id: "byte", name: "byte", symbol: "B", factor: 1 },
+      { id: "kb", name: "kilobyte", symbol: "kB", factor: 1000 },
+      { id: "mb", name: "megabyte", symbol: "MB", factor: 1e6 },
+      { id: "gb", name: "gigabyte", symbol: "GB", factor: 1e9 },
+      { id: "kib", name: "kibibyte", symbol: "KiB", factor: 1024 },
+      { id: "mib", name: "mebibyte", symbol: "MiB", factor: 1048576 },
+    ],
+  },
 ];
 
 export function convertValue(
