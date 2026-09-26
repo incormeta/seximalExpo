@@ -23,7 +23,19 @@ function groupFor(unit: Unit): UnitGroup {
   return "Metric & SI";
 }
 
-export function UnitConverter({ bottomPadding }: { bottomPadding: number }) {
+const IMPERIAL_IDS = new Set([
+  "in", "ft", "yd", "mi", "in2", "ft2", "yd2", "acre", "mi2", "floz", "tsp", "tbsp", "cup", "pt", "qt", "gal",
+  "in3", "ft3", "yd3", "mph", "fps", "oz", "lb", "st", "short-ton", "lbf", "ozf", "kip", "psi", "inhg", "f", "r", "hp", "btuh", "ftlbs", "btu", "ftlb",
+]);
+
+function groupFor(unit: Unit): UnitGroup {
+  if (unit.seximal) return "Seximal";
+  if (IMPERIAL_IDS.has(unit.id)) return "US & Imperial";
+  if (["day", "week", "yr", "nmi", "kn", "mach", "g", "atm", "torr", "rpm", "bpm"].includes(unit.id)) return "Other";
+  return "Metric & SI";
+}
+
+export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPadding: number; onEditingChange?: (editing: boolean) => void }) {
   const styles = useStyles();
   const { colors } = useTheme();
   const [catId, setCatId] = useState("length");
