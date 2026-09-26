@@ -4,7 +4,6 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { KeyDef, Keypad } from "@/src/components/keypad";
-import { ScreenHeader } from "@/src/components/screen-header";
 import { usesNativeTabs } from "@/src/navigation";
 import { formatDecimal, fromSeximal } from "@/src/seximal/base";
 import { CalcKey, CalcState, displayExpression, initialCalcState, pressKey } from "@/src/seximal/calc";
@@ -87,25 +86,19 @@ export default function CalcScreen() {
 
   return (
     <View style={styles.screen} testID="calc-screen">
-      <ScreenHeader
-        title="Seximal Calc"
-        testID="calc-header"
-        right={
-          <Pressable
-            testID="calc-clear-history-button"
-            onPress={() => saveHistory([])}
-            hitSlop={8}
-            style={styles.iconBtn}
-          >
-            <Ionicons name="trash-outline" size={20} color={colors.muted} />
-          </Pressable>
-        }
-      />
+      <Pressable
+        testID="calc-clear-history-button"
+        onPress={() => saveHistory([])}
+        hitSlop={8}
+        style={[styles.iconBtn, { top: insets.top + spacing.xs }]}
+      >
+        <Ionicons name="trash-outline" size={20} color={colors.muted} />
+      </Pressable>
 
       <ScrollView
         ref={historyRef}
         style={styles.history}
-        contentContainerStyle={styles.historyContent}
+        contentContainerStyle={[styles.historyContent, { paddingTop: insets.top + spacing.md }]}
         testID="calc-history-list"
       >
         {history.length === 0 ? (
@@ -154,9 +147,17 @@ export default function CalcScreen() {
 
 const useStyles = makeStyles((colors) => ({
   screen: { flex: 1, backgroundColor: colors.surface },
-  iconBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
+  iconBtn: {
+    position: "absolute",
+    right: spacing.md,
+    zIndex: 1,
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   history: { flex: 1 },
-  historyContent: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, gap: spacing.sm, justifyContent: "flex-end", flexGrow: 1 },
+  historyContent: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, gap: spacing.sm, justifyContent: "flex-end", flexGrow: 1 },
   historyEmpty: { fontFamily: fonts.text, fontSize: 14, color: colors.muted, textAlign: "right" },
   historyItem: { alignItems: "flex-end" },
   historyExpr: { fontFamily: fonts.displayRegular, fontSize: 18, color: colors.muted },
