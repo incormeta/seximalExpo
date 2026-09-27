@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { formatBase, formatDecimal, parseBase } from "@/src/seximal/base";
-import { CATEGORIES, NO_PREFIX, Unit, convertValue } from "@/src/seximal/units";
+import { CATEGORIES, NO_PREFIX, PREFIXES, Prefix, Unit, convertValue, unitLabel, unitSymbol } from "@/src/seximal/units";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 import { haptics } from "@/src/utils/haptics";
 
@@ -32,18 +32,21 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
   const category = useMemo(() => CATEGORIES.find((c) => c.id === catId) ?? CATEGORIES[0], [catId]);
   const [fromUnitId, setFromUnitId] = useState("m");
   const [toUnitId, setToUnitId] = useState("ft");
+  const [fromPrefix, setFromPrefix] = useState<Prefix>(NO_PREFIX);
+  const [toPrefix, setToPrefix] = useState<Prefix>(NO_PREFIX);
   const [inputSide, setInputSide] = useState<Side>("from");
   const [inputBase, setInputBase] = useState<InputBase>(10);
   const [raw, setRaw] = useState("1");
   const [dimensionsOpen, setDimensionsOpen] = useState(false);
   const [unitPicker, setUnitPicker] = useState<Side | null>(null);
+  const [prefixPicker, setPrefixPicker] = useState<Side | null>(null);
   const [editing, setEditing] = useState(false);
 
   const fromUnit = category.units.find((u) => u.id === fromUnitId) ?? category.units[0];
   const toUnit = category.units.find((u) => u.id === toUnitId) ?? category.units[1];
   const entered = parseBase(raw || "0", inputBase) ?? 0;
-  const fromValue = inputSide === "from" ? entered : convertValue(entered, toUnit, NO_PREFIX, fromUnit, NO_PREFIX);
-  const toValue = convertValue(fromValue, fromUnit, NO_PREFIX, toUnit, NO_PREFIX);
+  const fromValue = inputSide === "from" ? entered : convertValue(entered, toUnit, toPrefix, fromUnit, fromPrefix);
+  const toValue = convertValue(fromValue, fromUnit, fromPrefix, toUnit, toPrefix);
 
   useEffect(() => {
     onEditingChange?.(editing);
@@ -55,6 +58,8 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
     setCatId(id);
     setFromUnitId(next.units[0].id);
     setToUnitId(next.units[1].id);
+    setFromPrefix(NO_PREFIX);
+    setToPrefix(NO_PREFIX);
     setInputSide("from");
     setInputBase(preferredBase(next.units[0]));
     setRaw("1");
@@ -92,6 +97,8 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
   const swap = () => {
     setFromUnitId(toUnit.id);
     setToUnitId(fromUnit.id);
+    setFromPrefix(toPrefix);
+    setToPrefix(fromPrefix);
     setRaw(formatBase(inputSide === "from" ? toValue : fromValue, inputBase, 6));
     setInputSide(inputSide === "from" ? "to" : "from");
     haptics.light();
@@ -99,6 +106,7 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
 
   const panel = (side: Side) => {
     const unit = side === "from" ? fromUnit : toUnit;
+    const prefix = side === "from" ? fromPrefix : toPrefix;
     const value = side === "from" ? fromValue : toValue;
     const active = side === inputSide;
     const primaryBase = active && editing ? inputBase : preferredBase(unit);
@@ -107,16 +115,20 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
       <View style={[styles.valuePanel, active && styles.valuePanelActive]} testID={`convert-${side}-block`}>
         <View style={styles.panelTop}>
           <Pressable style={styles.unitButton} onPress={() => setUnitPicker(side)} testID={`convert-${side}-unit-button`}>
-            <View style={styles.unitIcon}><Text style={styles.unitIconText}>{unit.symbol}</Text></View>
+            <View style={styles.unitIcon}><Text style={styles.unitIconText}>{unitSymbol(unit, prefix)}</Text></View>
             <View style={styles.unitCopy}>
-              <Text style={styles.unitName} testID={`convert-${side}-unit-name`}>{unit.name}</Text>
+              <Text style={styles.unitName} testID={`convert-${side}-unit-name`}>{unitLabel(unit, prefix)}</Text>
             </View>
             <Ionicons name="chevron-down" size={19} color={colors.brandSecondary} />
           </Pressable>
+          {unit.seximal ? <Pressable style={styles.prefixButton} onPress={() => setPrefixPicker(side)} testID={`convert-${side}-prefix-button`}>
+            <Text style={styles.prefixButtonText}>{prefix.name || "base"}</Text>
+            <Ionicons name="layers-outline" size={15} color={colors.brandSecondary} />
+          </Pressable> : null}
         </View>
         <Pressable style={styles.numberButton} onPress={() => startEditing(side)} testID={`convert-${side}-value`}>
           <Text numberOfLines={1} adjustsFontSizeToFit style={[styles.value, active && styles.valueActive]}>{displayed}</Text>
-          <Text style={styles.symbol}>{unit.symbol}</Text>
+          <Text style={styles.symbol}>{unitSymbol(unit, prefix)}</Text>
         </Pressable>
         <Text style={styles.altValue} testID={`convert-${side}-alt`}>
           {primaryBase === 6 ? `${formatDecimal(value, 8)} decimal` : `${formatBase(value, 6, 6)} seximal`}
@@ -143,10 +155,16 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
         {panel("to")}
       </ScrollView>
 
-      {editing ? <ConversionKeypad base={inputBase} onToggleBase={toggleBase} onPress={keyPress} /> : null}
+      {editing ? <ConversionKeypad base={inputBase} bottomPadding={bottomPadding} onToggleBase={toggleBase} onPress={keyPress} /> : null}
       <DimensionModal visible={dimensionsOpen} selected={catId} onClose={() => setDimensionsOpen(false)} onSelect={selectCategory} />
       <UnitModal side={unitPicker} units={category.units} selected={unitPicker === "from" ? fromUnit.id : toUnit.id} onClose={() => setUnitPicker(null)} onSelect={(unit) => {
-        if (unitPicker === "from") setFromUnitId(unit.id); else setToUnitId(unit.id);
+        if (unitPicker === "from") {
+          setFromUnitId(unit.id);
+          if (!unit.seximal) setFromPrefix(NO_PREFIX);
+        } else {
+          setToUnitId(unit.id);
+          if (!unit.seximal) setToPrefix(NO_PREFIX);
+        }
         if (unitPicker === inputSide) {
           const base = preferredBase(unit);
           setRaw(formatBase(entered, base, 6));
@@ -154,14 +172,18 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
         }
         setUnitPicker(null);
       }} />
+      <PrefixModal side={prefixPicker} selected={prefixPicker === "from" ? fromPrefix : toPrefix} onClose={() => setPrefixPicker(null)} onSelect={(prefix) => {
+        if (prefixPicker === "from") setFromPrefix(prefix); else setToPrefix(prefix);
+        setPrefixPicker(null);
+      }} />
     </View>
   );
 }
 
-function ConversionKeypad({ base, onToggleBase, onPress }: { base: InputBase; onToggleBase: () => void; onPress: (key: string) => void }) {
+function ConversionKeypad({ base, bottomPadding, onToggleBase, onPress }: { base: InputBase; bottomPadding: number; onToggleBase: () => void; onPress: (key: string) => void }) {
   const styles = useStyles();
   const digits = base === 6 ? [["1", "2", "3"], ["4", "5", "."], ["0"]] : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["0", "."]];
-  return <View style={styles.keypad} testID="convert-keypad">
+  return <View style={[styles.keypad, { paddingBottom: Math.max(spacing.md, bottomPadding) }]} testID="convert-keypad">
     <View style={styles.keypadTop}><Text style={styles.keypadTitle}>ENTER VALUE</Text><Pressable onPress={onToggleBase} style={styles.baseButton} testID="convert-input-base-toggle"><Text style={styles.baseText}>{base === 6 ? "BASE 6 · SEXIMAL" : "BASE 10 · DECIMAL"}</Text><Ionicons name="repeat" size={16} style={styles.baseText} /></Pressable></View>
     <View style={styles.keysBody}><View style={styles.digitGrid}>{digits.map((row, i) => <View style={styles.keyRow} key={i}>{row.map((key) => <Pressable key={key} onPress={() => onPress(key)} style={({ pressed }) => [styles.key, pressed && styles.pressed]} testID={`convert-key-${key === "." ? "point" : key}`}><Text style={styles.keyText}>{key}</Text></Pressable>)}</View>)}</View>
       <View style={styles.actionColumn}><Pressable style={styles.actionKey} onPress={() => onPress("back")} testID="convert-key-backspace"><Ionicons name="backspace-outline" size={25} style={styles.actionText} /></Pressable><Pressable style={styles.actionKey} onPress={() => onPress("clear")} testID="convert-key-clear"><Text style={styles.actionText}>C</Text></Pressable><Pressable style={styles.doneKey} onPress={() => onPress("done")} testID="convert-key-done"><Ionicons name="checkmark" size={26} style={styles.doneText} /><Text style={styles.doneText}>OK</Text></Pressable></View>
@@ -186,13 +208,23 @@ function UnitModal({ side, units, selected, onClose, onSelect }: { side: Side | 
   </View></View></Modal>;
 }
 
+function PrefixModal({ side, selected, onClose, onSelect }: { side: Side | null; selected: Prefix; onClose: () => void; onSelect: (prefix: Prefix) => void }) {
+  const styles = useStyles(); const { colors } = useTheme();
+  return <Modal visible={side !== null} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalRoot}><Pressable style={styles.scrim} onPress={onClose} /><View style={styles.sheet}>
+    <View style={styles.sheetHead}><View><Text style={styles.sheetEyebrow}>SEXIMAL MAGNITUDE</Text><Text style={styles.sheetTitle}>Choose an order</Text></View><Pressable style={styles.close} onPress={onClose}><Ionicons name="close" size={23} color={colors.onSurface} /></Pressable></View>
+    <ScrollView contentContainerStyle={styles.prefixList}>{PREFIXES.map((prefix) => <Pressable key={prefix.power} testID={`convert-${side}-prefix-option-${prefix.power}`} onPress={() => onSelect(prefix)} style={[styles.prefixChip, selected.power === prefix.power && styles.unitChipActive]}>
+      <Text style={[styles.unitChipName, selected.power === prefix.power && styles.unitChipNameActive]}>{prefix.name || "base unit"}</Text><Text style={styles.unitChipSymbol}>{prefix.label}</Text>
+    </Pressable>)}</ScrollView>
+  </View></View></Modal>;
+}
+
 const useStyles = makeStyles((colors) => ({
   root: { flex: 1 }, scroll: { flex: 1 }, content: { padding: spacing.lg }, editingContent: { paddingTop: spacing.sm, paddingHorizontal: spacing.md, justifyContent: "center", flexGrow: 1 },
   dimensionHeader: { marginHorizontal: spacing.lg, marginBottom: spacing.sm, minHeight: 70, padding: spacing.md, borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.borderStrong, flexDirection: "row", alignItems: "center", gap: spacing.md },
   dimensionIcon: { width: 44, height: 44, borderRadius: radius.md, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }, dimensionOverline: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.5 }, dimensionTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 27 }, changeText: { color: colors.brandSecondary, fontFamily: fonts.textSemiBold, fontSize: 12 },
-  valuePanel: { borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, padding: spacing.md }, valuePanelActive: { borderColor: colors.brandPrimary }, panelTop: { flexDirection: "row" }, unitButton: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }, unitIcon: { minWidth: 42, height: 34, paddingHorizontal: 7, borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary, justifyContent: "center", alignItems: "center" }, unitIconText: { color: colors.brandSecondary, fontFamily: fonts.display, fontSize: 18 }, unitCopy: { flex: 1 }, unitName: { color: colors.onSurfaceSecondary, fontFamily: fonts.textSemiBold, fontSize: 16, textTransform: "capitalize" }, numberButton: { minHeight: 62, flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", gap: spacing.sm }, value: { color: colors.onSurface, fontFamily: fonts.displayRegular, fontSize: 48, maxWidth: "82%" }, valueActive: { color: colors.brandSecondary }, symbol: { color: colors.muted, fontFamily: fonts.displayRegular, fontSize: 25 }, altValue: { textAlign: "right", color: colors.muted, fontFamily: fonts.text, fontSize: 13 }, swapWrap: { height: 48, flexDirection: "row", alignItems: "center", gap: spacing.md }, line: { height: 1, backgroundColor: colors.divider, flex: 1 }, swap: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
+  valuePanel: { borderRadius: radius.lg, backgroundColor: colors.surfaceSecondary, borderWidth: 1, borderColor: colors.border, padding: spacing.md }, valuePanelActive: { borderColor: colors.brandPrimary }, panelTop: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, unitButton: { flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }, unitIcon: { minWidth: 42, height: 34, paddingHorizontal: 7, borderRadius: radius.sm, backgroundColor: colors.surfaceTertiary, justifyContent: "center", alignItems: "center" }, unitIconText: { color: colors.brandSecondary, fontFamily: fonts.display, fontSize: 18 }, unitCopy: { flex: 1 }, unitName: { color: colors.onSurfaceSecondary, fontFamily: fonts.textSemiBold, fontSize: 16, textTransform: "capitalize" }, prefixButton: { height: 34, paddingHorizontal: spacing.sm, borderRadius: radius.pill, backgroundColor: colors.brandTertiary, flexDirection: "row", alignItems: "center", gap: 4 }, prefixButtonText: { color: colors.onBrandTertiary, fontFamily: fonts.textSemiBold, fontSize: 12, textTransform: "capitalize" }, numberButton: { minHeight: 62, flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", gap: spacing.sm }, value: { color: colors.onSurface, fontFamily: fonts.displayRegular, fontSize: 48, maxWidth: "82%" }, valueActive: { color: colors.brandSecondary }, symbol: { color: colors.muted, fontFamily: fonts.displayRegular, fontSize: 25 }, altValue: { textAlign: "right", color: colors.muted, fontFamily: fonts.text, fontSize: 13 }, swapWrap: { height: 48, flexDirection: "row", alignItems: "center", gap: spacing.md }, line: { height: 1, backgroundColor: colors.divider, flex: 1 }, swap: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" },
   keypad: { backgroundColor: colors.surfaceSecondary, borderTopWidth: 1, borderTopColor: colors.borderStrong, padding: spacing.sm, paddingBottom: spacing.md, gap: spacing.sm }, keypadTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.xs }, keypadTitle: { color: colors.muted, fontFamily: fonts.textSemiBold, fontSize: 10, letterSpacing: 1.3 }, baseButton: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: colors.brandTertiary, borderRadius: radius.pill, paddingHorizontal: spacing.md, height: 28 }, baseText: { color: colors.onBrandTertiary, fontFamily: fonts.textSemiBold, fontSize: 11 }, keysBody: { flexDirection: "row", gap: spacing.sm }, digitGrid: { flex: 3, gap: 5, justifyContent: "space-between" }, keyRow: { flexDirection: "row", gap: 5, flex: 1 }, key: { flex: 1, minHeight: 38, borderRadius: radius.sm, backgroundColor: colors.keyDigit, alignItems: "center", justifyContent: "center" }, keyText: { color: colors.onSurface, fontFamily: fonts.displayMedium, fontSize: 25 }, pressed: { opacity: .55 }, actionColumn: { width: 82, gap: 5 }, actionKey: { minHeight: 38, flex: 1, backgroundColor: colors.surfaceTertiary, borderRadius: radius.sm, alignItems: "center", justifyContent: "center" }, actionText: { color: colors.brandSecondary, fontFamily: fonts.displayMedium, fontSize: 23 }, doneKey: { flex: 2, minHeight: 50, borderRadius: radius.sm, backgroundColor: colors.brand, alignItems: "center", justifyContent: "center" }, doneText: { color: colors.onBrand, fontFamily: fonts.textSemiBold, fontSize: 13 },
   modalRoot: { flex: 1, justifyContent: "flex-end" }, scrim: { ...({ position: "absolute", inset: 0 } as any), backgroundColor: colors.scrim }, sheet: { maxHeight: "88%", backgroundColor: colors.surfaceSecondary, borderTopLeftRadius: 28, borderTopRightRadius: 28, borderWidth: 1, borderColor: colors.borderStrong, paddingTop: spacing.lg }, sheetHead: { paddingHorizontal: spacing.lg, paddingBottom: spacing.md, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }, sheetEyebrow: { color: colors.brandSecondary, fontFamily: fonts.textSemiBold, letterSpacing: 1.5, fontSize: 11 }, sheetTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 30 }, close: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: colors.surfaceTertiary, alignItems: "center", justifyContent: "center" },
   dimensionGrid: { padding: spacing.lg, paddingTop: spacing.xs, flexDirection: "row", flexWrap: "wrap", gap: spacing.sm, paddingBottom: spacing["3xl"] }, dimensionCard: { width: "48%", minHeight: 76, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceTertiary, borderWidth: 1, borderColor: colors.border, flexDirection: "row", alignItems: "center", gap: spacing.sm }, dimensionCardActive: { borderColor: colors.brand, backgroundColor: colors.brandTertiary }, categoryIcon: { width: 36, height: 36, borderRadius: radius.sm, backgroundColor: colors.surfaceSecondary, alignItems: "center", justifyContent: "center" }, categoryIconActive: { backgroundColor: colors.brand }, categoryName: { flex: 1, color: colors.onSurfaceTertiary, fontFamily: fonts.textSemiBold, fontSize: 15 }, categoryNameActive: { color: colors.onBrandTertiary },
-  unitList: { padding: spacing.lg, paddingTop: 0, paddingBottom: spacing["3xl"], gap: spacing.lg }, group: { gap: spacing.sm }, groupHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, groupTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 21 }, unitChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, unitChip: { minWidth: "47%", flexGrow: 1, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceTertiary, borderWidth: 1, borderColor: colors.border }, unitChipActive: { backgroundColor: colors.brandTertiary, borderColor: colors.brand }, unitChipName: { color: colors.onSurfaceTertiary, fontFamily: fonts.textSemiBold, fontSize: 14, textTransform: "capitalize" }, unitChipNameActive: { color: colors.onBrandTertiary }, unitChipSymbol: { color: colors.muted, fontFamily: fonts.text, fontSize: 12, marginTop: 2 },
+  unitList: { padding: spacing.lg, paddingTop: 0, paddingBottom: spacing["3xl"], gap: spacing.lg }, group: { gap: spacing.sm }, groupHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm }, groupTitle: { color: colors.onSurface, fontFamily: fonts.display, fontSize: 21 }, unitChips: { flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, unitChip: { minWidth: "47%", flexGrow: 1, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceTertiary, borderWidth: 1, borderColor: colors.border }, unitChipActive: { backgroundColor: colors.brandTertiary, borderColor: colors.brand }, unitChipName: { color: colors.onSurfaceTertiary, fontFamily: fonts.textSemiBold, fontSize: 14, textTransform: "capitalize" }, unitChipNameActive: { color: colors.onBrandTertiary }, unitChipSymbol: { color: colors.muted, fontFamily: fonts.text, fontSize: 12, marginTop: 2 }, prefixList: { padding: spacing.lg, paddingTop: 0, paddingBottom: spacing["3xl"], flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }, prefixChip: { width: "30%", flexGrow: 1, padding: spacing.md, borderRadius: radius.md, backgroundColor: colors.surfaceTertiary, borderWidth: 1, borderColor: colors.border },
 }));

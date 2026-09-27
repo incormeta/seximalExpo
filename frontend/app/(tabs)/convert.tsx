@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BaseConverter } from "@/src/components/convert/base-converter";
@@ -13,7 +13,10 @@ type Mode = "units" | "bases";
 export default function ConvertScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
-  const bottomChrome = usesNativeTabs ? insets.bottom : 0;
+  // Native tabs float over the scene on iOS 26 instead of reducing its height.
+  // Reserve both the home-indicator inset and the tab control itself so custom
+  // bottom controls (notably the converter numpad) remain fully tappable.
+  const bottomChrome = usesNativeTabs && Platform.OS === "ios" ? insets.bottom + 64 : 0;
   const [mode, setMode] = useState<Mode>("units");
   const [enteringUnitValue, setEnteringUnitValue] = useState(false);
 
@@ -31,7 +34,7 @@ export default function ConvertScreen() {
         />
       </View> : null}
       {mode === "units" ? (
-        <UnitConverter bottomPadding={bottomChrome + spacing.lg} onEditingChange={setEnteringUnitValue} />
+        <UnitConverter bottomPadding={bottomChrome} onEditingChange={setEnteringUnitValue} />
       ) : (
         <BaseConverter bottomPadding={bottomChrome} />
       )}
