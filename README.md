@@ -24,18 +24,20 @@ Scan the QR code with Expo Go. If the phone cannot reach the computer over the l
 network, run `npm start -- --tunnel` instead. Android, iOS, and web shortcuts are also
 available as `npm run android`, `npm run ios`, and `npm run web`.
 
-The earlier `package.json does not exist` error occurred because the Expo project and
-its package file are under `frontend/`, not at the repository root. The new root
-package file makes `npm start` work from the root. To invoke the Expo CLI itself, first
-change directories:
+The Expo project and its package file are under `frontend/`, while the root package
+provides commands that forward into that directory. To invoke the Expo CLI directly,
+you can still change directories:
 
 ```bash
 cd frontend
 npx expo start
 ```
 
-Do not use `npx expo start` at the repository root: unlike an npm script, the Expo CLI
-does not redirect to a nested project.
+Running `npx expo start` at the repository root is also supported. The root
+[`App.tsx`](App.tsx) is a small compatibility entry point that loads the same routes
+from `frontend/app`; it prevents Expo's default `AppEntry.js` from looking for a
+missing root application. `npm start` remains preferred because it also uses the
+application's pinned Expo CLI and configuration from `frontend/`.
 
 ## Validate before building
 
