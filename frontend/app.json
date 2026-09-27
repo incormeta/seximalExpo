@@ -17,7 +17,11 @@
         "backgroundColor": "#000000"
       },
       "package": "com.emergent.basehub.nurc49",
-      "permissions": ["android.permission.VIBRATE", "android.permission.SCHEDULE_EXACT_ALARM", "android.permission.POST_NOTIFICATIONS"]
+      "permissions": [
+        "android.permission.VIBRATE",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -48,7 +52,8 @@
       "expo-secure-store",
       "expo-web-browser",
       "expo-status-bar",
-      "@react-native-vector-icons/ionicons"
+      "@react-native-vector-icons/ionicons",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

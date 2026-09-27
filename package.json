@@ -1,0 +1,20 @@
+{
+  "name": "seximal-expo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:app": "npm --prefix frontend install",
+    "start": "npm --prefix frontend run start",
+    "android": "npm --prefix frontend run android",
+    "ios": "npm --prefix frontend run ios",
+    "web": "npm --prefix frontend run web",
+    "lint": "npm --prefix frontend run lint",
+    "test": "npm --prefix frontend run test",
+    "doctor": "cd frontend && npx expo-doctor",
+    "eas:build": "cd frontend && npx eas-cli build",
+    "eas:submit": "cd frontend && npx eas-cli submit"
+  },
+  "engines": {
+    "node": ">=20.19.4"
+  }
+}
