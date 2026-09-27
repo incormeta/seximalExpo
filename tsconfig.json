@@ -1,0 +1,9 @@
+{
+  "extends": "./frontend/tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./frontend/*"]
+    }
+  },
+  "include": ["App.tsx", "frontend/**/*.ts", "frontend/**/*.tsx"]
+}
