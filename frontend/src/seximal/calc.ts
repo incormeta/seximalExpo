@@ -168,3 +168,26 @@ export function displayExpression(tokens: string[]): string {
   if (!tokens.length) return "0";
   return tokens.join(" ");
 }
+
+const SUPERSCRIPT: Record<string, string> = {
+  "-": "⁻", ".": "·", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵",
+};
+
+/** Display powers and roots as mathematical notation rather than infix operators. */
+export function formatCalculatorExpression(tokens: string[]): string {
+  if (!tokens.length) return "0";
+  const output: string[] = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+    const argument = tokens[index + 1];
+    if ((token === "xʸ" || token === "ʸ√x") && output.length && argument && !isOp(argument)) {
+      const base = output.pop()!;
+      const raised = [...argument].map((character) => SUPERSCRIPT[character] ?? character).join("");
+      output.push(token === "xʸ" ? `${base}${raised}` : `${raised}√(${base})`);
+      index += 1;
+    } else {
+      output.push(token);
+    }
+  }
+  return output.join(" ");
+}

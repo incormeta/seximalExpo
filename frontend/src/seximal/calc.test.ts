@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { CONSTANTS, CalcKey, evaluateTokens, initialCalcState, pressKey } from "./calc";
+import { CONSTANTS, CalcKey, evaluateTokens, formatCalculatorExpression, initialCalcState, pressKey } from "./calc";
 import { fromSeximal } from "./base";
 
 const closeTo = (actual: number, expected: number, tolerance = 1e-10) =>
@@ -72,4 +72,10 @@ test("operators can be replaced and unary keys do nothing without an entry", () 
   assert.deepEqual(pressKey(initialCalcState, "ln(x)"), initialCalcState);
   assert.deepEqual(pressKey(initialCalcState, "eˣ"), initialCalcState);
   assert.deepEqual(pressKey(initialCalcState, "±"), initialCalcState);
+});
+
+test("power and radical controls use mathematical display notation", () => {
+  assert.equal(formatCalculatorExpression(["2", "xʸ", "3"]), "2³");
+  assert.equal(formatCalculatorExpression(["4", "ʸ√x", "5"]), "⁵√(4)");
+  assert.equal(formatCalculatorExpression(["2", "+", "3", "xʸ", "2"]), "2 + 3²");
 });
