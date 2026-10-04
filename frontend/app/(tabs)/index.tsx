@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { KeyDef, Keypad } from "@/src/components/keypad";
 import { usesNativeTabs } from "@/src/navigation";
 import { formatDecimal, fromSeximal } from "@/src/seximal/base";
-import { CalcKey, CalcState, displayExpression, initialCalcState, pressKey } from "@/src/seximal/calc";
+import { CalcKey, CalcState, formatCalculatorExpression, initialCalcState, pressKey } from "@/src/seximal/calc";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 import { haptics } from "@/src/utils/haptics";
 import { storage } from "@/src/utils/storage";
@@ -78,7 +78,7 @@ export default function CalcScreen() {
     setState(rest);
   };
 
-  const exprText = displayExpression(state.tokens);
+  const exprText = formatCalculatorExpression(state.tokens);
   const lastToken = state.tokens[state.tokens.length - 1];
   const currentValue = lastToken && !["+", "−", "×", "÷"].includes(lastToken) ? fromSeximal(lastToken) : null;
   const decimalHint =
@@ -116,7 +116,7 @@ export default function CalcScreen() {
               }}
               style={styles.historyItem}
             >
-              <Text style={styles.historyExpr}>{h.expr} =</Text>
+              <Text style={styles.historyExpr}>{formatCalculatorExpression(h.expr.split(" "))} =</Text>
               <Text style={styles.historyResult}>{h.result}</Text>
             </Pressable>
           ))

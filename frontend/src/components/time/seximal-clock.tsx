@@ -36,8 +36,12 @@ export function SeximalClock() {
   const t = nowSeximal(now);
   const size = Math.min(width - spacing.lg * 2, 360);
 
-  const onPagerScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const idx = Math.min(FACES.length - 1, Math.max(0, Math.round(e.nativeEvent.contentOffset.x / width)));
+  const onPagerScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    // iOS reports the page it will settle on in targetContentOffset while the
+    // drag is still ending. Using it avoids briefly selecting the page that is
+    // merely closest to the finger before the native paging animation finishes.
+    const settledX = e.nativeEvent.targetContentOffset?.x ?? e.nativeEvent.contentOffset.x;
+    const idx = Math.min(FACES.length - 1, Math.max(0, Math.round(settledX / width)));
     if (idx !== face) {
       setFace(idx);
       storage.setItem(FACE_KEY, idx);
@@ -76,12 +80,10 @@ export function SeximalClock() {
         ref={pagerRef}
         horizontal
         pagingEnabled
-        snapToInterval={width}
         decelerationRate="fast"
         showsHorizontalScrollIndicator={false}
-        onScroll={onPagerScroll}
-        scrollEventThrottle={16}
-        contentOffset={{ x: face * width, y: 0 }}
+        onMomentumScrollEnd={onPagerScrollEnd}
+        onScrollEndDrag={onPagerScrollEnd}
         style={{ width, flexGrow: 0 }}
         testID="clock-face-pager"
       >
