@@ -2,6 +2,7 @@ import Ionicons from "@react-native-vector-icons/ionicons";
 import { Tabs } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { usesNativeTabs } from "@/src/navigation";
 import { fonts, useTheme } from "@/src/theme";
@@ -15,6 +16,7 @@ const TABS = [
 
 export default function TabsLayout() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
 
   if (usesNativeTabs) {
     return (
@@ -39,7 +41,7 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surfaceSecondary,
           borderTopColor: colors.border,
-          ...(Platform.OS === "web" ? { height: 64 } : {}),
+          ...(Platform.OS === "web" ? { height: 64 + insets.bottom, paddingBottom: insets.bottom } : {}),
         },
         tabBarItemStyle: { alignSelf: "center" },
         tabBarLabelStyle: { fontFamily: fonts.textSemiBold, fontSize: 12 },

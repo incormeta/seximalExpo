@@ -1,50 +1,22 @@
-# Welcome to your Expo app 👋
+# Seximal app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This directory contains the Expo Router source for the Seximal PWA and native app.
+See the [repository README](../README.md) for Vercel deployment, iPhone Home Screen
+installation, offline behavior, and timer limitations.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+From this directory:
 
 ```bash
-npm run reset-project
+npm ci
+npm run web       # development server
+npm run build     # production website + offline cache in dist/
+npm run preview   # production preview on localhost:4173
+npm run typecheck
+npm run lint
+npm test
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Use npm and the committed `package-lock.json`. `app/+html.tsx` defines web metadata;
+`public/manifest.webmanifest` defines the installed app; `scripts/build-pwa.cjs`
+generates icons and the revisioned service worker after Expo exports the routes.
+Native builds keep using Expo and EAS.
