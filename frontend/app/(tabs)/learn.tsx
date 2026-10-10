@@ -1,15 +1,11 @@
-import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { ReactNode } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { usesNativeTabs } from "@/src/navigation";
 import { CATEGORIES, PREFIXES } from "@/src/seximal/units";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
-
-const HERO =
-  "https://images.unsplash.com/photo-1709377195538-5522ed0f9e10?crop=entropy&cs=srgb&fm=jpg&q=85&w=1200";
 
 function Card({ title, children, testID }: { title: string; children: ReactNode; testID?: string }) {
   const styles = useStyles();
@@ -54,7 +50,7 @@ export default function LearnScreen() {
     <View style={styles.screen} testID="learn-screen">
       <ScrollView contentContainerStyle={{ paddingBottom: bottomChrome + spacing.lg }}>
         <View style={styles.hero}>
-          <Image source={{ uri: HERO }} style={styles.heroImage} contentFit="cover" transition={300} />
+          <LinearGradient colors={[colors.brandTertiary, colors.surfaceSecondary]} style={styles.heroImage} />
           <LinearGradient colors={["transparent", colors.scrim, colors.surface]} style={styles.heroScrim} />
           <View style={[styles.heroText, { paddingTop: insets.top + spacing.lg }]}>
             <Text style={styles.heroKicker}>LEARN</Text>
@@ -66,6 +62,18 @@ export default function LearnScreen() {
         </View>
 
         <View style={styles.body}>
+          {Platform.OS === "web" ? (
+            <Card title="Use Seximal offline" testID="learn-card-install">
+              <Text style={styles.p}>
+                On iPhone, open this site in Safari, tap Share, then Add to Home Screen.
+                Enable Open as Web App if offered, then tap Add.
+              </Text>
+              <Text style={styles.p}>
+                Once the app has loaded online, you can reopen it without a connection.
+                On other devices, use your browser’s Install app option.
+              </Text>
+            </Card>
+          ) : null}
           <Card title="What is seximal?" testID="learn-card-intro">
             <Text style={styles.p}>
               Seximal (also called senary or heximal) is a positional numeral system with base six. It uses only

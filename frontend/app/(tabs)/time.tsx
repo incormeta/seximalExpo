@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { useState, useSyncExternalStore } from "react";
+import { Platform, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SegmentedControl } from "@/src/components/segmented-control";
@@ -10,12 +10,18 @@ import { usesNativeTabs } from "@/src/navigation";
 import { makeStyles, spacing } from "@/src/theme";
 
 type Mode = "clock" | "timer" | "stopwatch";
+const subscribeToHydration = () => () => {};
 
 export default function TimeScreen() {
   const styles = useStyles();
   const insets = useSafeAreaInsets();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const [mode, setMode] = useState<Mode>("clock");
+  const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
+
+  // Clocks and timer end times must use the device's time, not the export time.
+  // Matching the server's initial render also prevents hydration errors.
+  if (Platform.OS === "web" && !hydrated) return <View style={styles.screen} testID="time-screen" />;
 
   return (
     <View style={styles.screen} testID="time-screen">
