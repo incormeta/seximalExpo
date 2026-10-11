@@ -1,95 +1,98 @@
-# Seximal Expo
+# Seximal PWA
 
-The Expo application lives in [`frontend/`](frontend). A small root `package.json`
-provides convenience commands so the common workflow can be run from the repository
-root without moving or duplicating any application code.
+The `mainPWA` branch builds Seximal as an installable, offline-capable web app. The
+existing Expo/React Native screens are exported as a static website; no Expo Go,
+backend, account, or environment variables are needed to use the PWA.
 
-## Prerequisites
+## Run and build
 
-- Node.js 20.19.4 or newer (the minimum supported by this Expo/React Native setup)
-- npm, or Yarn 1.22 if working directly in `frontend/`
-- The [Expo Go](https://expo.dev/go) app for testing on a physical device
-- An Expo account and platform developer credentials only when creating cloud builds
-
-## Run locally with Expo Go
-
-From the repository root:
+Use Node.js 22 LTS or 24 LTS and npm. From the repository root:
 
 ```bash
 npm run install:app
-npm start
+npm run web
 ```
 
-Scan the QR code with Expo Go. If the phone cannot reach the computer over the local
-network, run `npm start -- --tunnel` instead. Android, iOS, and web shortcuts are also
-available as `npm run android`, `npm run ios`, and `npm run web`.
-
-The Expo project and its package file are under `frontend/`, while the root package
-provides commands that forward into that directory. To invoke the Expo CLI directly,
-you can still change directories:
+To build and preview the production PWA:
 
 ```bash
-cd frontend
-npx expo start
+npm run build
+npm run preview
 ```
 
-Running `npx expo start` at the repository root is also supported. The root
-[`App.tsx`](App.tsx) is a small compatibility entry point that loads the same routes
-from `frontend/app`; it prevents Expo's default `AppEntry.js` from looking for a
-missing root application. `npm start` remains preferred because it also uses the
-application's pinned Expo CLI and configuration from `frontend/`.
+Open <http://localhost:4173>. Offline support is enabled in production builds,
+not the Expo development server. The complete deployable website is generated in
+`frontend/dist/`. The npm lockfile in `frontend/` pins dependencies for deployment;
+use `npm --prefix frontend ci` for a reproducible installation.
 
-## Validate before building
+## Host with Vercel
+
+1. Push `mainPWA` to your Git repository and import the repository in Vercel.
+2. Keep **Root Directory** set to the repository root, not `frontend`.
+3. Select **Other** as the framework preset and Node.js **22.x** or **24.x**.
+4. Deploy `mainPWA`. For a stable public app, set `mainPWA` as the Production Branch.
+
+The root `vercel.json` supplies the install command (`npm --prefix frontend ci --include=dev`),
+build command (`npm run build`), output directory (`frontend/dist`), clean route
+URLs, and service-worker cache headers. No Vercel functions are required. Use the
+production HTTPS URL on your phone; disable Deployment Protection for a public
+app. No deployment or remote branch push is performed by these local scripts.
+
+Other static hosts work too: publish the contents of `frontend/dist` at the domain
+root over HTTPS, serve `/convert`, `/time`, and `/learn` from their corresponding
+HTML files, and avoid long-lived HTTP caching of `sw.js` and the manifest. This
+configuration assumes the app is hosted at `/`, not beneath a subdirectory.
+
+## Install on an iPhone
+
+1. Open the deployed HTTPS URL in **Safari** and let it finish loading online.
+2. Tap **Share**, then **Add to Home Screen** (it may be inside **More**).
+3. Leave **Open as Web App** enabled if Safari offers that option, then tap **Add**.
+4. Launch **Seximal** from the new Home Screen icon.
+
+The app opens in its own window and works offline after the service worker has
+cached the first successful load. Install it from the stable production URL so
+updates and locally saved calculator history use the same origin. Other browsers
+can use their **Install app** option when available.
+
+## Offline use and updates
+
+The production build generates an app manifest, regular and maskable icons, an
+Apple touch icon, and a Workbox service worker. It caches all exported screens,
+JavaScript, fonts, icons, and the alarm sound. The Learn screen uses a local
+gradient instead of a remote image. Calculator history stays in browser storage.
+
+New deployments download a revised cache when opened online. Close all open
+Seximal windows/tabs and reopen to activate an update. Browser/iOS storage eviction
+or clearing website data can remove offline files and history; open online again
+to restore the app cache.
+
+**Timer limitation:** iOS can suspend a PWA when it is backgrounded or the screen
+locks. Keep the app visible and the screen awake to hear an alarm. The Start and
+Resume buttons authorize browser audio, but device sound settings and browser
+policies still apply. The PWA does not schedule native local notifications or
+provide a guaranteed background alarm.
+
+## Verify
 
 ```bash
-npm run doctor
+npm run typecheck
 npm run lint
 npm test
+npm run build
+npm run preview
 ```
 
-`expo-doctor` checks package compatibility and app configuration. No backend or
-environment variables are required by the current mobile app.
+With the production preview open, check Calc, Convert, Time, and Learn. Wait for
+`/sw.js` to activate in browser developer tools, switch the browser to offline,
+then reload and visit each tab, including direct URLs such as `/time`. Verify
+calculator history survives a reload. Test Home Screen installation and notch/home
+indicator spacing on a physical iPhone after deploying over HTTPS.
 
-## Build with EAS
+## Native Expo builds
 
-EAS commands must run with `frontend/` as their project directory. The included
-[`frontend/eas.json`](frontend/eas.json) defines these profiles:
-
-- `development`: an internal development-client build (this is separate from Expo Go)
-- `preview`: an internal installable build for testers
-- `production`: a store build with remotely managed, automatically incremented build numbers
-
-For the first build, authenticate and link this checkout to an Expo project:
-
-```bash
-npx eas-cli login
-cd frontend
-npx eas-cli init
-npx eas-cli build --platform all --profile preview
-```
-
-`eas init` adds the Expo project ID to `app.json`; commit that generated identifier so
-CI and other developers build the same Expo project. EAS will prompt for or generate
-Android/iOS signing credentials. Apple App Store distribution requires an Apple
-Developer account, and Google Play submission requires a Play Console account and
-service-account key.
-
-After initialization, builds may also be started from the repository root:
-
-```bash
-npm run eas:build -- --platform android --profile preview
-npm run eas:build -- --platform ios --profile production
-```
-
-Submit an existing production build with:
-
-```bash
-npm run eas:submit -- --platform android --profile production
-# or
-npm run eas:submit -- --platform ios --profile production
-```
-
-Before a public release, verify the display name, slug, Android package name, iOS
-bundle identifier, icons, screenshots, store descriptions, privacy disclosures, and
-notification behavior. The existing identifiers in `frontend/app.json` were retained
-to avoid changing application identity or functionality.
+Expo remains the source framework, so native development is still available with
+`npm start`, `npm run ios`, and `npm run android`. Native app configuration and
+EAS profiles remain in `frontend/app.json` and `frontend/eas.json`. Run EAS commands
+from `frontend/`; production native builds require Expo project setup and platform
+signing credentials. The PWA does not require those credentials.

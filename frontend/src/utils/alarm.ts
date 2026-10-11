@@ -86,6 +86,7 @@ export function useAlarm() {
   const ringing = useRef(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/immutability -- Expo Audio exposes loop as a mutable player property.
     player.loop = true;
   }, [player]);
 
@@ -112,5 +113,7 @@ export function useAlarm() {
 
   useEffect(() => stop, [stop]);
 
-  return { start, stop };
+  // Browsers need a user gesture to enable audio; the web implementation unlocks it.
+  const prepare = useCallback(() => {}, []);
+  return { start, stop, prepare };
 }

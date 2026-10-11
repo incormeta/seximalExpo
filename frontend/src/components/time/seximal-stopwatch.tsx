@@ -15,24 +15,26 @@ export function SeximalStopwatch() {
   const [startAt, setStartAt] = useState(0);
   const [accumulated, setAccumulated] = useState(0);
   const [laps, setLaps] = useState<number[]>([]);
-  const [, setTick] = useState(0);
+  const [now, setNow] = useState(Date.now);
 
   useEffect(() => {
     if (!running) return;
-    const id = setInterval(() => setTick((t) => t + 1), 40);
+    const id = setInterval(() => setNow(Date.now()), 40);
     return () => clearInterval(id);
   }, [running]);
 
-  const elapsed = accumulated + (running ? Date.now() - startAt : 0);
+  const elapsed = accumulated + (running ? now - startAt : 0);
   const lapsTotal = laps.reduce((a, b) => a + b, 0);
   const currentLap = elapsed - lapsTotal;
 
   const startStop = () => {
     if (running) {
-      setAccumulated(elapsed);
+      setAccumulated(accumulated + Date.now() - startAt);
       setRunning(false);
     } else {
-      setStartAt(Date.now());
+      const timestamp = Date.now();
+      setNow(timestamp);
+      setStartAt(timestamp);
       setRunning(true);
     }
   };

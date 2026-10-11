@@ -1,5 +1,6 @@
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
+import Head from "expo-router/head";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -11,6 +12,7 @@ import { KeyboardProvider } from "react-native-keyboard-controller";
 import { ErrorBoundary } from "@/src/components/error-boundary";
 import { queryClient } from "@/src/query-client";
 import { useTheme } from "@/src/theme";
+import { registerPwa } from "@/src/utils/pwa";
 
 // Disable logbox errors etc so that users can see the app
 // and agent works as expected.
@@ -35,12 +37,15 @@ export default function RootLayout() {
     if (loaded) SplashScreen.hideAsync().catch(() => {});
   }, [loaded]);
 
+  useEffect(() => { registerPwa(); }, []);
+
   if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.surface }} />;
 
   // One app level ErrorBoundary; a render crash shows a reload screen
   // instead of a blank app.
   return (
     <ErrorBoundary>
+      <Head><title>Seximal</title></Head>
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.surface }}>
           <KeyboardProvider>

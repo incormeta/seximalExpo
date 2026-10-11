@@ -1,6 +1,6 @@
 import Ionicons from "@react-native-vector-icons/ionicons";
 import { useEffect, useState } from "react";
-import { Pressable, Text, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, Text, View, useWindowDimensions } from "react-native";
 import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
 
 import { MonoDigits } from "@/src/components/mono-digits";
@@ -28,6 +28,7 @@ export function SeximalTimer() {
   const { colors } = useTheme();
   const { width } = useWindowDimensions();
   const alarm = useAlarm();
+  const ringAlarm = alarm.start;
   const [h, setH] = useState(0);
   const [m, setM] = useState(5);
   const [s, setS] = useState(0);
@@ -35,27 +36,26 @@ export function SeximalTimer() {
   const [total, setTotal] = useState(0);
   const [endAt, setEndAt] = useState(0);
   const [remaining, setRemaining] = useState(0);
-  const [tick, setTick] = useState(0);
+  const [now, setNow] = useState(Date.now);
   const [notifId, setNotifId] = useState<string | null>(null);
   const [notifStatus, setNotifStatus] = useState<NotifStatus>("unsupported");
   const [notifPromptDismissed, setNotifPromptDismissed] = useState(false);
 
   useEffect(() => {
-    if (status !== "running") return;
-    const id = setInterval(() => setTick((t) => t + 1), 40);
+    const id = setInterval(() => {
+      const timestamp = Date.now();
+      setNow(timestamp);
+      if (status === "running" && timestamp >= endAt) {
+        setStatus("done");
+        setRemaining(0);
+        haptics.success();
+        ringAlarm();
+      }
+    }, status === "running" ? 40 : 1000);
     return () => clearInterval(id);
-  }, [status]);
+  }, [status, endAt, ringAlarm]);
 
-  const liveRemaining = status === "running" ? Math.max(0, endAt - Date.now()) : remaining;
-
-  useEffect(() => {
-    if (status === "running" && liveRemaining <= 0) {
-      setStatus("done");
-      setRemaining(0);
-      haptics.success();
-      alarm.start();
-    }
-  }, [status, liveRemaining, tick, alarm]);
+  const liveRemaining = status === "running" ? Math.max(0, endAt - now) : remaining;
 
   const pickedMs = seximalToMs({ hours: h, minutes: m, seconds: s });
   const label = `${pad6(h)}:${pad6(m)}:${pad6(s)}`;
@@ -72,7 +72,10 @@ export function SeximalTimer() {
 
   const start = () => {
     if (pickedMs <= 0) return;
-    const at = Date.now() + pickedMs;
+    alarm.prepare();
+    const timestamp = Date.now();
+    const at = timestamp + pickedMs;
+    setNow(timestamp);
     setTotal(pickedMs);
     setEndAt(at);
     setRemaining(pickedMs);
@@ -85,7 +88,10 @@ export function SeximalTimer() {
     unschedule();
   };
   const resume = () => {
-    const at = Date.now() + remaining;
+    alarm.prepare();
+    const timestamp = Date.now();
+    const at = timestamp + remaining;
+    setNow(timestamp);
     setEndAt(at);
     setStatus("running");
     schedule(at);
@@ -105,16 +111,21 @@ export function SeximalTimer() {
   };
 
   const ringSize = Math.min(width - spacing.lg * 4, 300);
-  const endDate = new Date(status === "running" ? endAt : Date.now() + (status === "paused" ? remaining : pickedMs));
+  const endDate = new Date(status === "running" ? endAt : now + (status === "paused" ? remaining : pickedMs));
   const showNotifPrompt =
     status !== "idle" && status !== "done" && !notifPromptDismissed && (notifStatus === "undetermined" || notifStatus === "denied" || notifStatus === "blocked");
 
   return (
     <View style={styles.root} testID="timer-view">
+      {Platform.OS === "web" ? (
+        <Text style={styles.pickerHint} testID="timer-web-notice">
+          Keep the app open and your screen awake to hear the alarm. Browsers can pause timers in the background.
+        </Text>
+      ) : null}
       {status === "done" ? (
         <Animated.View entering={FadeInUp} exiting={FadeOutUp} style={styles.banner} testID="timer-done-banner">
           <Ionicons name="alarm-outline" size={20} color={colors.onBrand} />
-          <Text style={styles.bannerText}>Timer finished · ringing</Text>
+          <Text style={styles.bannerText}>{Platform.OS === "web" ? "Timer finished" : "Timer finished · ringing"}</Text>
           <Pressable onPress={cancel} style={styles.bannerStop} testID="timer-done-dismiss">
             <Text style={styles.bannerStopText}>Stop</Text>
           </Pressable>
