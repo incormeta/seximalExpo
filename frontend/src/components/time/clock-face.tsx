@@ -30,7 +30,8 @@ const diurnalPt = (c: number, frac: number, dist: number) => ({
 
 export function ClockFace({ face, size, time: t }: Props) {
   const { colors } = useTheme();
-  const c = size / 2;
+  // Scale the entire face together, including labels and stroke widths.
+  const c = 180;
   const r = c - 44;
   const ri = r * 0.6;
 
@@ -158,7 +159,7 @@ export function ClockFace({ face, size, time: t }: Props) {
   const sun = diurnalPt(c, hourFrac, r * 0.88);
 
   return (
-    <Svg width={size} height={size} testID={`clock-face-${face}`}>
+    <Svg width={size} height={size} viewBox="0 0 360 360" testID={`clock-face-${face}`}>
       <Circle cx={c} cy={c} r={r} stroke={colors.borderStrong} strokeWidth={1.5} fill={colors.surface} />
       {elements}
       {face !== "solar" && <Line x1={c} y1={c} x2={hourEnd.x} y2={hourEnd.y} stroke={colors.onSurface} strokeWidth={5} strokeLinecap="round" />}

@@ -3,7 +3,7 @@ import type { PropsWithChildren } from "react";
 
 export default function Root({ children }: PropsWithChildren) {
   return (
-    <html lang="en" style={{ height: "100%" }}>
+    <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
@@ -28,7 +28,12 @@ export default function Root({ children }: PropsWithChildren) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
+              /* Keep the document, safe-area frame and app on the same viewport. */
+              html, body, #root { height: var(--app-viewport-height, 100%); }
+              @supports (height: 100dvh) {
+                html, body, #root { height: var(--app-viewport-height, 100dvh); }
+              }
+              #root { position: fixed !important; inset: 0; min-height: 0; }
               html, body { background: #09090B; overscroll-behavior: none; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
@@ -39,7 +44,6 @@ export default function Root({ children }: PropsWithChildren) {
       <body
         style={{
           margin: 0,
-          height: "100%",
           overflow: "hidden",
           display: "flex",
           flexDirection: "column",

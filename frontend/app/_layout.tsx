@@ -13,6 +13,7 @@ import { ErrorBoundary } from "@/src/components/error-boundary";
 import { queryClient } from "@/src/query-client";
 import { useTheme } from "@/src/theme";
 import { registerPwa } from "@/src/utils/pwa";
+import { syncPwaViewport } from "@/src/utils/pwa-viewport";
 
 // Disable logbox errors etc so that users can see the app
 // and agent works as expected.
@@ -37,7 +38,11 @@ export default function RootLayout() {
     if (loaded) SplashScreen.hideAsync().catch(() => {});
   }, [loaded]);
 
-  useEffect(() => { registerPwa(); }, []);
+  useEffect(() => {
+    const stopSyncingViewport = syncPwaViewport();
+    registerPwa();
+    return stopSyncingViewport;
+  }, []);
 
   if (!loaded) return <View style={{ flex: 1, backgroundColor: colors.surface }} />;
 

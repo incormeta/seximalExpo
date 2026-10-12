@@ -17,6 +17,7 @@ export default function TimeScreen() {
   const insets = useSafeAreaInsets();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const [mode, setMode] = useState<Mode>("clock");
+  const [contentHeight, setContentHeight] = useState(0);
   const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
   // Clocks and timer end times must use the device's time, not the export time.
@@ -39,10 +40,12 @@ export default function TimeScreen() {
       </View>
       <ScrollView
         style={styles.scroll}
+        onLayout={({ nativeEvent }) => setContentHeight(nativeEvent.layout.height)}
         contentContainerStyle={{ paddingBottom: bottomChrome + spacing.lg }}
         nestedScrollEnabled
+        testID="time-content"
       >
-        {mode === "clock" ? <SeximalClock /> : null}
+        {mode === "clock" ? <SeximalClock availableHeight={contentHeight - bottomChrome - spacing.lg} /> : null}
         <View style={mode === "timer" ? undefined : styles.hidden}>
           <SeximalTimer />
         </View>
