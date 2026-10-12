@@ -41,7 +41,7 @@ export default function TabsLayout() {
         tabBarStyle: {
           backgroundColor: colors.surfaceSecondary,
           borderTopColor: colors.border,
-          ...(Platform.OS === "web" ? { height: 64 + insets.bottom, paddingBottom: insets.bottom } : {}),
+          ...(Platform.OS === "web" ? { height: 56 + insets.bottom, paddingBottom: insets.bottom } : {}),
         },
         tabBarItemStyle: { alignSelf: "center" },
         tabBarLabelStyle: { fontFamily: fonts.textSemiBold, fontSize: 12 },

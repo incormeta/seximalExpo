@@ -21,7 +21,7 @@ export default function ConvertScreen() {
   const [enteringUnitValue, setEnteringUnitValue] = useState(false);
 
   return (
-    <View style={styles.screen} testID="convert-screen">
+    <View style={[styles.screen, enteringUnitValue && { paddingTop: insets.top }]} testID="convert-screen">
       {!enteringUnitValue ? <View style={[styles.segmentWrap, { paddingTop: insets.top + spacing.sm }]}>
         <SegmentedControl<Mode>
           options={[

@@ -28,7 +28,8 @@ export default function Root({ children }: PropsWithChildren) {
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              body > div:first-child { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; }
+              /* Use the current viewport, including iOS Home Screen app chrome. */
+              #root { position: fixed !important; inset: 0; height: 100%; height: 100dvh; min-height: 0; }
               html, body { background: #09090B; overscroll-behavior: none; }
               [role="tablist"] [role="tab"] * { overflow: visible !important; }
               [role="heading"], [role="heading"] * { overflow: visible !important; }
