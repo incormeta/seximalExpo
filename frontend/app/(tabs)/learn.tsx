@@ -4,7 +4,7 @@ import { Platform, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { usesNativeTabs } from "@/src/navigation";
-import { CATEGORIES, PREFIXES } from "@/src/seximal/units";
+import { AUXILIARY_CELCE_IN_CELSIUS, CATEGORIES, CELCE_IN_CELSIUS, NO_PREFIX, PREFIXES, convertValue } from "@/src/seximal/units";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
 function Card({ title, children, testID }: { title: string; children: ReactNode; testID?: string }) {
@@ -153,6 +153,45 @@ export default function LearnScreen() {
               const conversion = UNIT_CONVERSIONS[c.id];
               return <UnitRow key={c.id} quantity={c.name} unit={`1 ${u.name}`} {...conversion} />;
             })}
+            <Text style={styles.p}>
+              One turnforce is one fort acting at a perpendicular distance of one thumb.
+              One stream is one fill per instant. One cruise means travelling one thumb per fill of fuel.
+              These units are derived from the other seximal units and accept powers-of-six prefixes.
+            </Text>
+          </Card>
+
+          <Card title="Electric efficiency" testID="learn-card-electric-efficiency">
+            <Text style={styles.p}>
+              Electric efficiency measures distance travelled per unit of energy. It has its own dimension,
+              because liquid-fuel economy measures distance per volume instead.
+              Higher efficiency means travelling farther with the same energy.
+            </Text>
+            <Text style={styles.p}>
+              One electric cruise is one thumb travelled per nerg of energy. Like cruise, it accepts seximal prefixes.
+              A milli-electric cruise is 6⁻⁴ electric cruises, a useful scale for car efficiency.
+            </Text>
+            <Row a="Unit" b="Scale" c="Equivalent" head />
+            <Row a="electric cruise" b="thumb/nerg" c={seximalUnitConversion("electric", "kmkwh")} />
+            <Row a="milli·ecrz" b="6⁻⁴" c={seximalUnitConversion("electric", "kmkwh", PREFIXES.find(({ name }) => name === "milli")!)} />
+          </Card>
+
+          <Card title="Seximal temperature" testID="learn-card-temperature">
+            <Text style={styles.p}>
+              One celce is the temperature rise produced by adding one nerg of energy to one fill of liquid water.
+              The conversion uses water’s reference density of 1 g/mL and heat capacity of 4.184 J/(g·°C).
+              Actual water properties vary with temperature; these reference values keep the unit fixed.
+            </Text>
+            <Text style={styles.p}>
+              Celce and auxiliary celce both use water’s freezing point (0 °C) as zero.
+              The values below describe temperature rises.
+            </Text>
+            <Row a="Unit" b="Celce" c="Rise in °C" head />
+            <Row a="celce" b="1" c={`≈ ${CELCE_IN_CELSIUS.toPrecision(6)}`} />
+            <Row a="auxiliary celce" b="6⁵" c={`≈ ${AUXILIARY_CELCE_IN_CELSIUS.toFixed(6)}`} />
+            <Text style={styles.p}>
+              One auxiliary celce always equals 6⁵ celce (100000 in seximal, 7,776 in decimal).
+              Prefixes scale celce; auxiliary celce stays fixed and does not accept prefixes.
+            </Text>
           </Card>
 
           <Card title="Number base cheatsheet" testID="learn-card-bases">
@@ -169,6 +208,14 @@ export default function LearnScreen() {
   );
 }
 
+function seximalUnitConversion(categoryId: string, targetId: string, prefix = NO_PREFIX): string {
+  const category = CATEGORIES.find(({ id }) => id === categoryId)!;
+  const source = category.units.find(({ seximal }) => seximal)!;
+  const target = category.units.find(({ id }) => id === targetId)!;
+  const value = convertValue(1, source, prefix, target, NO_PREFIX);
+  return `${value.toPrecision(6)} ${target.symbol}`;
+}
+
 const UNIT_CONVERSIONS: Record<string, { si: string; us: string }> = {
   time: { si: "0.07716 s", us: "0.07716 sec" },
   length: { si: "5.83862 cm", us: "2.29867 in" },
@@ -180,9 +227,13 @@ const UNIT_CONVERSIONS: Record<string, { si: string; us: string }> = {
   force: { si: "1.95186 N", us: "0.43880 lbf" },
   pressure: { si: "572.54065 Pa", us: "0.08304 psi" },
   energy: { si: "0.11396 J", us: "0.08405 ft⋅lbf" },
-  temp: { si: "1 °C", us: "1.8 °F" },
+  temp: { si: `Δ ${CELCE_IN_CELSIUS.toPrecision(6)} °C`, us: `Δ ${(CELCE_IN_CELSIUS * 9 / 5).toPrecision(6)} °F` },
   freq: { si: "12.96 Hz", us: "12.96 cycles/s" },
   power: { si: "1.47694 W", us: "0.00198 hp" },
+  torque: { si: seximalUnitConversion("torque", "nm"), us: seximalUnitConversion("torque", "lbfft") },
+  flow: { si: seximalUnitConversion("flow", "lps"), us: seximalUnitConversion("flow", "gpm") },
+  fuel: { si: seximalUnitConversion("fuel", "kml"), us: seximalUnitConversion("fuel", "mpgus") },
+  electric: { si: seximalUnitConversion("electric", "kmkwh"), us: seximalUnitConversion("electric", "mikwh") },
 };
 
 const useStyles = makeStyles((colors) => ({
