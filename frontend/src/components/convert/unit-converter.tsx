@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { formatBase, formatDecimal, parseBase } from "@/src/seximal/base";
-import { CATEGORIES, NO_PREFIX, PREFIXES, Prefix, Unit, convertValue, unitLabel, unitSymbol } from "@/src/seximal/units";
+import { CATEGORIES, NO_PREFIX, PREFIXES, Prefix, Unit, convertValue, supportsPrefixes, unitLabel, unitSymbol } from "@/src/seximal/units";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 import { haptics } from "@/src/utils/haptics";
 
@@ -13,7 +13,7 @@ type UnitGroup = "Seximal" | "Metric & SI" | "US & Imperial" | "Other";
 
 const IMPERIAL_IDS = new Set([
   "in", "ft", "yd", "mi", "in2", "ft2", "yd2", "acre", "mi2", "floz", "tsp", "tbsp", "cup", "pt", "qt", "gal",
-  "in3", "ft3", "yd3", "mph", "fps", "oz", "lb", "st", "short-ton", "lbf", "ozf", "kip", "psi", "inhg", "f", "r", "hp", "btuh", "ftlbs", "btu", "ftlb",
+  "in3", "ft3", "yd3", "mph", "fps", "oz", "lb", "st", "short-ton", "lbf", "ozf", "kip", "psi", "inhg", "f", "r", "hp", "btuh", "ftlbs", "btu", "ftlb", "mikwh",
 ]);
 
 function groupFor(unit: Unit): UnitGroup {
@@ -121,7 +121,7 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
             </View>
             <Ionicons name="chevron-down" size={19} color={colors.brandSecondary} />
           </Pressable>
-          {unit.seximal ? <Pressable style={styles.prefixButton} onPress={() => setPrefixPicker(side)} testID={`convert-${side}-prefix-button`}>
+          {supportsPrefixes(unit) ? <Pressable style={styles.prefixButton} onPress={() => setPrefixPicker(side)} testID={`convert-${side}-prefix-button`}>
             <Text style={styles.prefixButtonText}>{prefix.name || "base"}</Text>
             <Ionicons name="layers-outline" size={15} color={colors.brandSecondary} />
           </Pressable> : null}
@@ -160,10 +160,10 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
       <UnitModal side={unitPicker} units={category.units} selected={unitPicker === "from" ? fromUnit.id : toUnit.id} onClose={() => setUnitPicker(null)} onSelect={(unit) => {
         if (unitPicker === "from") {
           setFromUnitId(unit.id);
-          if (!unit.seximal) setFromPrefix(NO_PREFIX);
+          if (!supportsPrefixes(unit)) setFromPrefix(NO_PREFIX);
         } else {
           setToUnitId(unit.id);
-          if (!unit.seximal) setToPrefix(NO_PREFIX);
+          if (!supportsPrefixes(unit)) setToPrefix(NO_PREFIX);
         }
         if (unitPicker === inputSide) {
           const base = preferredBase(unit);

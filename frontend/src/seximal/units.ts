@@ -31,6 +31,8 @@ export type Unit = {
   /** multiply by this to get the category base value (SI) */
   factor: number;
   seximal?: boolean;
+  /** Fixed auxiliary units can use seximal notation without accepting prefixes. */
+  prefixable?: boolean;
   /** temperature-style affine units */
   toBase?: (v: number) => number;
   fromBase?: (v: number) => number;
@@ -45,6 +47,28 @@ export type Category = {
 };
 
 const IN = 0.0254;
+const MILE_IN_METRES = 1609.344;
+const INSTANT_IN_SECONDS = 100 / 1296; // Exactly 6⁶ instants per hour.
+const THUMB_IN_METRES = 2.29867 * IN;
+const FILL_IN_MILLILITRES = 199.0345;
+const FORT_IN_NEWTONS = 1.95186;
+const NERG_IN_JOULES = 0.11396;
+const KILOWATT_HOUR_IN_JOULES = 3.6e6;
+// Derived units use the same reference factors as their constituent seximal units.
+const TURNFORCE_IN_NEWTON_METRES = FORT_IN_NEWTONS * THUMB_IN_METRES;
+const STREAM_IN_LITRES_PER_SECOND = (FILL_IN_MILLILITRES / 1000) / INSTANT_IN_SECONDS;
+const CRUISE_IN_KILOMETRES_PER_LITRE = (THUMB_IN_METRES / 1000) / (FILL_IN_MILLILITRES / 1000);
+const ELECTRIC_CRUISE_IN_KILOMETRES_PER_KILOWATT_HOUR = (THUMB_IN_METRES / 1000) /
+  (NERG_IN_JOULES / KILOWATT_HOUR_IN_JOULES);
+// Fixed reference model for liquid water, matching the fill/heft density convention.
+const WATER_DENSITY_GRAMS_PER_MILLILITRE = 1;
+const WATER_SPECIFIC_HEAT_JOULES_PER_GRAM_CELSIUS = 4.184;
+export const CELCE_IN_CELSIUS = NERG_IN_JOULES /
+  (FILL_IN_MILLILITRES * WATER_DENSITY_GRAMS_PER_MILLILITRE * WATER_SPECIFIC_HEAT_JOULES_PER_GRAM_CELSIUS);
+export const AUXILIARY_CELCE_MULTIPLIER = 6 ** 5;
+export const AUXILIARY_CELCE_IN_CELSIUS = AUXILIARY_CELCE_MULTIPLIER * CELCE_IN_CELSIUS;
+
+export const supportsPrefixes = (unit: Unit): boolean => !!unit.seximal && unit.prefixable !== false;
 
 export const CATEGORIES: Category[] = [
   {
@@ -53,7 +77,7 @@ export const CATEGORIES: Category[] = [
     icon: "time-outline",
     baseSymbol: "s",
     units: [
-      { id: "instant", name: "instant", symbol: "inst", factor: 100 / 1296, seximal: true }, // 0.07716 s (exact: 6⁶ instants = 1 h)
+      { id: "instant", name: "instant", symbol: "inst", factor: INSTANT_IN_SECONDS, seximal: true },
       { id: "s", name: "second", symbol: "s", factor: 1 },
       { id: "ms", name: "millisecond", symbol: "ms", factor: 1e-3 },
       { id: "us", name: "microsecond", symbol: "μs", factor: 1e-6 },
@@ -71,7 +95,7 @@ export const CATEGORIES: Category[] = [
     icon: "resize-outline",
     baseSymbol: "m",
     units: [
-      { id: "thumb", name: "thumb", symbol: "th", factor: 2.29867 * IN, seximal: true },
+      { id: "thumb", name: "thumb", symbol: "th", factor: THUMB_IN_METRES, seximal: true },
       { id: "mm", name: "millimetre", symbol: "mm", factor: 1e-3 },
       { id: "um", name: "micrometre", symbol: "μm", factor: 1e-6 },
       { id: "nm", name: "nanometre", symbol: "nm", factor: 1e-9 },
@@ -81,7 +105,7 @@ export const CATEGORIES: Category[] = [
       { id: "in", name: "inch", symbol: "in", factor: IN },
       { id: "ft", name: "foot", plural: "feet", symbol: "ft", factor: 0.3048 },
       { id: "yd", name: "yard", symbol: "yd", factor: 0.9144 },
-      { id: "mi", name: "mile", symbol: "mi", factor: 1609.344 },
+      { id: "mi", name: "mile", symbol: "mi", factor: MILE_IN_METRES },
       { id: "nmi", name: "nautical mile", symbol: "nmi", factor: 1852 },
     ],
   },
@@ -110,7 +134,7 @@ export const CATEGORIES: Category[] = [
     icon: "cube-outline",
     baseSymbol: "mL",
     units: [
-      { id: "fill", name: "fill", symbol: "fl", factor: 199.0345, seximal: true },
+      { id: "fill", name: "fill", symbol: "fl", factor: FILL_IN_MILLILITRES, seximal: true },
       { id: "ml", name: "millilitre", symbol: "mL", factor: 1 },
       { id: "cm3", name: "cubic centimetre", symbol: "cm³", factor: 1 },
       { id: "l", name: "litre", symbol: "L", factor: 1000 },
@@ -161,7 +185,7 @@ export const CATEGORIES: Category[] = [
     icon: "scale-outline",
     baseSymbol: "g",
     units: [
-      { id: "heft", name: "heft", symbol: "hft", factor: 199.0345, seximal: true },
+      { id: "heft", name: "heft", symbol: "hft", factor: FILL_IN_MILLILITRES * WATER_DENSITY_GRAMS_PER_MILLILITRE, seximal: true },
       { id: "mg", name: "milligram", symbol: "mg", factor: 1e-3 },
       { id: "ug", name: "microgram", symbol: "μg", factor: 1e-6 },
       { id: "g", name: "gram", symbol: "g", factor: 1 },
@@ -179,7 +203,7 @@ export const CATEGORIES: Category[] = [
     icon: "arrow-forward-outline",
     baseSymbol: "N",
     units: [
-      { id: "fort", name: "fort", symbol: "frt", factor: 1.95186, seximal: true },
+      { id: "fort", name: "fort", symbol: "frt", factor: FORT_IN_NEWTONS, seximal: true },
       { id: "n", name: "newton", symbol: "N", factor: 1 },
       { id: "mn", name: "millinewton", symbol: "mN", factor: 1e-3 },
       { id: "kn", name: "kilonewton", symbol: "kN", factor: 1000 },
@@ -216,14 +240,14 @@ export const CATEGORIES: Category[] = [
     icon: "flash-outline",
     baseSymbol: "J",
     units: [
-      { id: "nerg", name: "nerg", symbol: "nrg", factor: 0.11396, seximal: true },
+      { id: "nerg", name: "nerg", symbol: "nrg", factor: NERG_IN_JOULES, seximal: true },
       { id: "j", name: "joule", symbol: "J", factor: 1 },
       { id: "kj", name: "kilojoule", symbol: "kJ", factor: 1000 },
       { id: "mj", name: "megajoule", symbol: "MJ", factor: 1e6 },
       { id: "cal", name: "calorie", symbol: "cal", factor: 4.184 },
       { id: "kcal", name: "kilocalorie", symbol: "kcal", factor: 4184 },
       { id: "wh", name: "watt-hour", symbol: "Wh", factor: 3600 },
-      { id: "kwh", name: "kilowatt-hour", symbol: "kWh", factor: 3.6e6 },
+      { id: "kwh", name: "kilowatt-hour", symbol: "kWh", factor: KILOWATT_HOUR_IN_JOULES },
       { id: "btu", name: "BTU", symbol: "BTU", factor: 1055.05585262 },
       { id: "ftlb", name: "foot-pound", symbol: "ft⋅lbf", factor: 1.3558179483314004 },
       { id: "erg", name: "erg", symbol: "erg", factor: 1e-7 },
@@ -235,8 +259,10 @@ export const CATEGORIES: Category[] = [
     icon: "thermometer-outline",
     baseSymbol: "°C",
     units: [
-      { id: "celce", name: "celce", symbol: "°ce", factor: 1, seximal: true },
+      // Both celce scales keep the Celsius freezing-point zero.
+      { id: "celce", name: "celce", symbol: "°ce", factor: CELCE_IN_CELSIUS, seximal: true },
       { id: "c", name: "degree Celsius", plural: "degrees Celsius", symbol: "°C", factor: 1 },
+      { id: "aux-celce", name: "auxiliary celce", symbol: "°ceₐ", factor: AUXILIARY_CELCE_IN_CELSIUS, seximal: true, prefixable: false },
       {
         id: "f",
         name: "degree Fahrenheit",
@@ -295,7 +321,7 @@ export const CATEGORIES: Category[] = [
     icon: "sync-outline",
     baseSymbol: "N⋅m",
     units: [
-      { id: "turn", name: "turnforce", symbol: "trf", factor: 1, seximal: true },
+      { id: "turn", name: "turnforce", symbol: "trf", factor: TURNFORCE_IN_NEWTON_METRES, seximal: true },
       { id: "nm", name: "newton metre", symbol: "N⋅m", factor: 1 },
       { id: "kgfm", name: "kilogram-force metre", symbol: "kgf⋅m", factor: 9.80665 },
       { id: "lbfft", name: "pound-force foot", symbol: "lbf⋅ft", factor: 1.3558179483314 },
@@ -308,7 +334,7 @@ export const CATEGORIES: Category[] = [
     icon: "water-outline",
     baseSymbol: "L/s",
     units: [
-      { id: "stream", name: "stream", symbol: "str", factor: 1, seximal: true },
+      { id: "stream", name: "stream", symbol: "str", factor: STREAM_IN_LITRES_PER_SECOND, seximal: true },
       { id: "lps", name: "litre per second", symbol: "L/s", factor: 1 },
       { id: "lpm", name: "litre per minute", symbol: "L/min", factor: 1 / 60 },
       { id: "m3h", name: "cubic metre per hour", symbol: "m³/h", factor: 1000 / 3600 },
@@ -322,10 +348,22 @@ export const CATEGORIES: Category[] = [
     icon: "water-outline",
     baseSymbol: "km/L",
     units: [
-      { id: "cruise", name: "cruise", symbol: "crz", factor: 1, seximal: true },
+      { id: "cruise", name: "cruise", symbol: "crz", factor: CRUISE_IN_KILOMETRES_PER_LITRE, seximal: true },
       { id: "kml", name: "kilometre per litre", symbol: "km/L", factor: 1 },
       { id: "mpgus", name: "miles per US gallon", symbol: "mpg US", factor: 0.425143707 },
       { id: "mpgimp", name: "miles per imperial gallon", symbol: "mpg imp", factor: 0.35400619 },
+    ],
+  },
+  {
+    id: "electric",
+    name: "Electric Efficiency",
+    icon: "car-outline",
+    baseSymbol: "km/kWh",
+    units: [
+      { id: "electric-cruise", name: "electric cruise", symbol: "ecrz", factor: ELECTRIC_CRUISE_IN_KILOMETRES_PER_KILOWATT_HOUR, seximal: true },
+      { id: "kmkwh", name: "kilometre per kilowatt-hour", plural: "kilometres per kilowatt-hour", symbol: "km/kWh", factor: 1 },
+      { id: "mikwh", name: "mile per kilowatt-hour", plural: "miles per kilowatt-hour", symbol: "mi/kWh", factor: MILE_IN_METRES / 1000 },
+      { id: "mpj", name: "metre per joule", plural: "metres per joule", symbol: "m/J", factor: KILOWATT_HOUR_IN_JOULES / 1000 },
     ],
   },
   {
@@ -353,19 +391,19 @@ export function convertValue(
   to: Unit,
   toPrefix: Prefix,
 ): number {
-  const fromMult = from.seximal ? prefixMultiplier(fromPrefix) : 1;
-  const toMult = to.seximal ? prefixMultiplier(toPrefix) : 1;
+  const fromMult = supportsPrefixes(from) ? prefixMultiplier(fromPrefix) : 1;
+  const toMult = supportsPrefixes(to) ? prefixMultiplier(toPrefix) : 1;
   const base = from.toBase ? from.toBase(value * fromMult) : value * fromMult * from.factor;
   const out = to.fromBase ? to.fromBase(base) : base / to.factor;
   return out / toMult;
 }
 
 export function unitLabel(unit: Unit, prefix: Prefix): string {
-  if (!unit.seximal || prefix.power === 0) return unit.name;
+  if (!supportsPrefixes(unit) || prefix.power === 0) return unit.name;
   return prefix.name + unit.name;
 }
 
 export function unitSymbol(unit: Unit, prefix: Prefix): string {
-  if (!unit.seximal || prefix.power === 0) return unit.symbol;
+  if (!supportsPrefixes(unit) || prefix.power === 0) return unit.symbol;
   return `${prefix.name}·${unit.symbol}`;
 }
