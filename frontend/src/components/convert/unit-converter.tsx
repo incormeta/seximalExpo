@@ -88,9 +88,12 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
     if (key === "back") return setRaw((value) => value.slice(0, -1));
     if (key === "done") return setEditing(false);
     setRaw((value) => {
+      if (key === "±") return value.startsWith("-") ? value.slice(1) : "-" + value;
       if (key === "." && value.includes(".")) return value;
-      if (value.length >= 14) return value;
-      return value === "0" && key !== "." ? key : value + key;
+      if (value.replace("-", "").length >= 14) return value;
+      if (key !== "." && value === "0") return key;
+      if (key !== "." && value === "-0") return "-" + key;
+      return value + key;
     });
   };
 
@@ -182,10 +185,10 @@ export function UnitConverter({ bottomPadding, onEditingChange }: { bottomPaddin
 
 function ConversionKeypad({ base, bottomPadding, onToggleBase, onPress }: { base: InputBase; bottomPadding: number; onToggleBase: () => void; onPress: (key: string) => void }) {
   const styles = useStyles();
-  const digits = base === 6 ? [["1", "2", "3"], ["4", "5", "."], ["0"]] : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["0", "."]];
+  const digits = base === 6 ? [["1", "2", "3"], ["4", "5", "."], ["±", "0"]] : [["7", "8", "9"], ["4", "5", "6"], ["1", "2", "3"], ["±", "0", "."]];
   return <View style={[styles.keypad, { paddingBottom: Math.max(spacing.md, bottomPadding) }]} testID="convert-keypad">
     <View style={styles.keypadTop}><Text style={styles.keypadTitle}>ENTER VALUE</Text><Pressable onPress={onToggleBase} style={styles.baseButton} testID="convert-input-base-toggle"><Text style={styles.baseText}>{base === 6 ? "BASE 6 · SEXIMAL" : "BASE 10 · DECIMAL"}</Text><Ionicons name="repeat" size={16} style={styles.baseText} /></Pressable></View>
-    <View style={styles.keysBody}><View style={styles.digitGrid}>{digits.map((row, i) => <View style={styles.keyRow} key={i}>{row.map((key) => <Pressable key={key} onPress={() => onPress(key)} style={({ pressed }) => [styles.key, pressed && styles.pressed]} testID={`convert-key-${key === "." ? "point" : key}`}><Text style={styles.keyText}>{key}</Text></Pressable>)}</View>)}</View>
+    <View style={styles.keysBody}><View style={styles.digitGrid}>{digits.map((row, i) => <View style={styles.keyRow} key={i}>{row.map((key) => <Pressable key={key} onPress={() => onPress(key)} style={({ pressed }) => [styles.key, pressed && styles.pressed]} accessibilityLabel={key === "±" ? "Toggle sign" : undefined} testID={`convert-key-${key === "." ? "point" : key === "±" ? "negate" : key}`}><Text style={styles.keyText}>{key}</Text></Pressable>)}</View>)}</View>
       <View style={styles.actionColumn}><Pressable style={styles.actionKey} onPress={() => onPress("back")} testID="convert-key-backspace"><Ionicons name="backspace-outline" size={25} style={styles.actionText} /></Pressable><Pressable style={styles.actionKey} onPress={() => onPress("clear")} testID="convert-key-clear"><Text style={styles.actionText}>C</Text></Pressable><Pressable style={styles.doneKey} onPress={() => onPress("done")} testID="convert-key-done"><Ionicons name="checkmark" size={26} style={styles.doneText} /><Text style={styles.doneText}>OK</Text></Pressable></View>
     </View>
   </View>;
