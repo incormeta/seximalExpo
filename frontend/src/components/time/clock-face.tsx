@@ -1,19 +1,10 @@
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 
+import { FaceId } from "@/src/seximal/clock-faces";
 import { SeximalTime } from "@/src/seximal/time";
 import { fonts, useTheme } from "@/src/theme";
 
-export type FaceId = 0 | "solar" | 1 | 2 | 3;
-
-export const FACES: { id: FaceId; name: string; description: string }[] = [
-  { id: 0, name: "Face 0", description: "Diurnal · counterclockwise hours outside, minutes inside" },
-  { id: "solar", name: "Solar face", description: "Diurnal · the sun marks the hour, minutes inside" },
-  { id: 1, name: "Face 1", description: "Semi-diurnal · 12 hours around, thirds of an hour" },
-  { id: 2, name: "Face 2", description: "Semi-diurnal · minutes outside, hours inside" },
-  { id: 3, name: "Face 3", description: "Diurnal · 24-hour inner ring, minutes & seconds outside" },
-];
-
-type Props = { face: FaceId; size: number; time: SeximalTime };
+type Props = { face: Exclude<FaceId, "progress" | "hue">; size: number; time: SeximalTime };
 
 const rad = (frac: number) => frac * Math.PI * 2 - Math.PI / 2;
 const pt = (c: number, frac: number, dist: number) => ({

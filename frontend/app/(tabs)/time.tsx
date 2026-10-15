@@ -3,10 +3,13 @@ import { Platform, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { SegmentedControl } from "@/src/components/segmented-control";
+import { useClockSource } from "@/src/components/time/clock-time";
+import { HueBackground } from "@/src/components/time/hue-clock";
 import { SeximalClock } from "@/src/components/time/seximal-clock";
 import { SeximalStopwatch } from "@/src/components/time/seximal-stopwatch";
 import { SeximalTimer } from "@/src/components/time/seximal-timer";
 import { usesNativeTabs } from "@/src/navigation";
+import { FaceId } from "@/src/seximal/clock-faces";
 import { makeStyles, spacing } from "@/src/theme";
 
 type Mode = "clock" | "timer" | "stopwatch";
@@ -17,6 +20,8 @@ export default function TimeScreen() {
   const insets = useSafeAreaInsets();
   const bottomChrome = usesNativeTabs ? insets.bottom : 0;
   const [mode, setMode] = useState<Mode>("clock");
+  const [clockFace, setClockFace] = useState<FaceId>(0);
+  const clock = useClockSource(mode === "clock", clockFace === "progress" || clockFace === "hue");
   const [contentHeight, setContentHeight] = useState(0);
   const hydrated = useSyncExternalStore(subscribeToHydration, () => true, () => false);
 
@@ -26,6 +31,7 @@ export default function TimeScreen() {
 
   return (
     <View style={styles.screen} testID="time-screen">
+      {mode === "clock" && clockFace === "hue" ? <HueBackground clock={clock} /> : null}
       <View style={[styles.segmentWrap, { paddingTop: insets.top + spacing.sm }]}>
         <SegmentedControl<Mode>
           options={[
@@ -45,7 +51,7 @@ export default function TimeScreen() {
         nestedScrollEnabled
         testID="time-content"
       >
-        {mode === "clock" ? <SeximalClock availableHeight={contentHeight - bottomChrome - spacing.lg} /> : null}
+        {mode === "clock" ? <SeximalClock clock={clock} onFaceChange={setClockFace} availableHeight={contentHeight - bottomChrome - spacing.lg} /> : null}
         <View style={mode === "timer" ? undefined : styles.hidden}>
           <SeximalTimer />
         </View>
@@ -59,7 +65,7 @@ export default function TimeScreen() {
 
 const useStyles = makeStyles((colors) => ({
   screen: { flex: 1, backgroundColor: colors.surface },
-  segmentWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm },
+  segmentWrap: { paddingHorizontal: spacing.lg, paddingBottom: spacing.sm, backgroundColor: colors.surface },
   scroll: { flex: 1 },
   hidden: { display: "none" },
 }));
