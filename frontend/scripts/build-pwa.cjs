@@ -7,14 +7,14 @@ const { generateSW } = require('workbox-build');
 async function buildPwa() {
   const dist = path.join(__dirname, '..', 'dist');
   const icons = path.join(dist, 'icons');
-  const source = path.join(__dirname, '..', 'assets', 'images', 'icon.png');
+  const source = path.join(__dirname, '..', 'assets', 'images', 'pwa-icon.png');
   await mkdir(icons, { recursive: true });
 
   for (const [name, size] of [['icon-192.png', 192], ['icon-512.png', 512], ['apple-touch-icon.png', 180]]) {
     await sharp(source).resize(size, size).flatten({ background: '#09090B' }).png().toFile(path.join(icons, name));
   }
-  // Keep the existing artwork inside the maskable icon's safe area.
-  await sharp(source).resize(320, 320).extend({ top: 96, bottom: 96, left: 96, right: 96, background: '#09090B' })
+  // The artwork keeps the emblem inside the central 80% safe-area circle.
+  await sharp(source).resize(512, 512)
     .flatten({ background: '#09090B' }).png().toFile(path.join(icons, 'icon-maskable-512.png'));
 
   const { count, size, warnings } = await generateSW({
