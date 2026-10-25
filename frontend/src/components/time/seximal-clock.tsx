@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { MonoDigits } from "@/src/components/mono-digits";
 import { ClockFace, FACES } from "@/src/components/time/clock-face";
+import { DaylightLocation } from "@/src/components/time/daylight-location";
 import { pad6 } from "@/src/seximal/base";
-import { INSTANT_MS, formatClock, formatStandardClock, nowSeximal } from "@/src/seximal/time";
+import { INSTANT_MS, formatClock, formatStandardClock, msToSeximal, nowSeximal } from "@/src/seximal/time";
+import { SolarLocation, getSunTimes, isSolarLocation, zonedParts } from "@/src/solar/sun";
 import { fonts, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 import { haptics } from "@/src/utils/haptics";
 import { storage } from "@/src/utils/storage";
 
 const FACE_KEY = "seximal.clock.face";
+const LOCATION_KEY = "seximal.clock.solar-location";
 
 export function SeximalClock({ availableHeight }: { availableHeight: number }) {
   const styles = useStyles();
@@ -17,6 +20,7 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
   const { width } = useWindowDimensions();
   const [now, setNow] = useState(() => new Date());
   const [face, setFace] = useState(0);
+  const [location, setLocation] = useState<SolarLocation | null>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [footerHeight, setFooterHeight] = useState(0);
   const pagerRef = useRef<ScrollView>(null);
@@ -27,15 +31,31 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
   }, []);
 
   useEffect(() => {
+    storage.getItem(LOCATION_KEY, "").then((saved) => {
+      try {
+        const parsed: unknown = typeof saved === "string" ? JSON.parse(saved) : null;
+        if (isSolarLocation(parsed)) setLocation(parsed);
+      } catch { /* Ignore outdated or corrupt saved locations. */ }
+    });
     storage.getItem(FACE_KEY, 0).then((v) => {
-      const idx = typeof v === "number" && v >= 0 && v < FACES.length ? v : 0;
+      const idx = typeof v === "number" && Number.isInteger(v) && v >= 0 && v < FACES.length ? v : 0;
       setFace(idx);
       requestAnimationFrame(() => pagerRef.current?.scrollTo({ x: idx * width, animated: false }));
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const t = nowSeximal(now);
+  const daylightActive = FACES[face].id === "daylight";
+  const local = location ? zonedParts(now, location.timeZone) : null;
+  const solarDay = local?.day;
+  const sunTimes = useMemo(() => location && solarDay ? getSunTimes(solarDay, location) : null, [location, solarDay]);
+  const t = daylightActive && local
+    ? msToSeximal(local.hours * 3_600_000 + local.minutes * 60_000 + local.seconds * 1000 + now.getMilliseconds())
+    : nowSeximal(now);
+  const changeLocation = (next: SolarLocation) => {
+    setLocation(next);
+    storage.setItem(LOCATION_KEY, JSON.stringify(next));
+  };
   // Measure the text separately so the dial fits above standard time and date.
   // Keep scrolling available on very short screens or with large accessibility text.
   const dialHeight = availableHeight > 0 && headerHeight > 0 && footerHeight > 0
@@ -55,7 +75,8 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
     }
   };
 
-  const dateLabel = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const timeZone = daylightActive ? location?.timeZone : undefined;
+  const dateLabel = now.toLocaleDateString(undefined, { timeZone, weekday: "long", month: "long", day: "numeric" });
 
   return (
     <View style={styles.root} testID="clock-view">
@@ -98,7 +119,7 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
       >
         {FACES.map((f) => (
           <View key={f.id} style={[styles.page, { width }]}>
-            <ClockFace face={f.id} size={size} time={t} />
+            <ClockFace face={f.id} size={size} time={t} sunTimes={sunTimes} />
           </View>
         ))}
       </ScrollView>
@@ -108,10 +129,15 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
             {FACES.map((f, i) => (
               <Pressable
                 key={f.id}
+                accessibilityRole="button"
+                accessibilityLabel={f.name}
+                accessibilityState={{ selected: i === face }}
                 testID={`clock-face-dot-${f.id}`}
                 hitSlop={10}
                 onPress={() => {
                   haptics.selection();
+                  setFace(i);
+                  storage.setItem(FACE_KEY, i);
                   pagerRef.current?.scrollTo({ x: i * width, animated: true });
                 }}
                 style={[styles.dot, i === face && styles.dotActive]}
@@ -123,10 +149,12 @@ export function SeximalClock({ availableHeight }: { availableHeight: number }) {
           </Text>
         </View>
 
+        {daylightActive && <DaylightLocation location={location} times={sunTimes} onChange={changeLocation} />}
+
         <View style={styles.footer}>
           <Text style={styles.footerLabel}>STANDARD TIME</Text>
           <Text style={styles.footerTime} testID="clock-standard">
-            {formatStandardClock(now)}
+            {timeZone ? now.toLocaleTimeString(undefined, { timeZone, hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }) : formatStandardClock(now)}
           </Text>
           <Text style={styles.footerDate} testID="clock-date">{dateLabel}</Text>
         </View>

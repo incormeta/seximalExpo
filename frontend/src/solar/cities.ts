@@ -1,0 +1,31 @@
+import { SolarLocation } from "./sun";
+
+// Bundled coordinates keep location selection and solar calculations offline.
+export const SOLAR_CITIES: SolarLocation[] = [
+  { name: "Anchorage, USA", latitude: 61.2181, longitude: -149.9003, timeZone: "America/Anchorage" },
+  { name: "Auckland, New Zealand", latitude: -36.8485, longitude: 174.7633, timeZone: "Pacific/Auckland" },
+  { name: "Bangkok, Thailand", latitude: 13.7563, longitude: 100.5018, timeZone: "Asia/Bangkok" },
+  { name: "Berlin, Germany", latitude: 52.52, longitude: 13.405, timeZone: "Europe/Berlin" },
+  { name: "Buenos Aires, Argentina", latitude: -34.6037, longitude: -58.3816, timeZone: "America/Argentina/Buenos_Aires" },
+  { name: "Cairo, Egypt", latitude: 30.0444, longitude: 31.2357, timeZone: "Africa/Cairo" },
+  { name: "Cape Town, South Africa", latitude: -33.9249, longitude: 18.4241, timeZone: "Africa/Johannesburg" },
+  { name: "Chicago, USA", latitude: 41.8781, longitude: -87.6298, timeZone: "America/Chicago" },
+  { name: "Delhi, India", latitude: 28.6139, longitude: 77.209, timeZone: "Asia/Kolkata" },
+  { name: "Dubai, UAE", latitude: 25.2048, longitude: 55.2708, timeZone: "Asia/Dubai" },
+  { name: "Honolulu, USA", latitude: 21.3099, longitude: -157.8581, timeZone: "Pacific/Honolulu" },
+  { name: "London, UK", latitude: 51.5074, longitude: -0.1278, timeZone: "Europe/London" },
+  { name: "Los Angeles, USA", latitude: 34.0522, longitude: -118.2437, timeZone: "America/Los_Angeles" },
+  { name: "Mexico City, Mexico", latitude: 19.4326, longitude: -99.1332, timeZone: "America/Mexico_City" },
+  { name: "Nairobi, Kenya", latitude: -1.2921, longitude: 36.8219, timeZone: "Africa/Nairobi" },
+  { name: "New York, USA", latitude: 40.7128, longitude: -74.006, timeZone: "America/New_York" },
+  { name: "Paris, France", latitude: 48.8566, longitude: 2.3522, timeZone: "Europe/Paris" },
+  { name: "Reykjavík, Iceland", latitude: 64.1466, longitude: -21.9426, timeZone: "Atlantic/Reykjavik" },
+  { name: "San Francisco, USA", latitude: 37.7749, longitude: -122.4194, timeZone: "America/Los_Angeles" },
+  { name: "São Paulo, Brazil", latitude: -23.5505, longitude: -46.6333, timeZone: "America/Sao_Paulo" },
+  { name: "Singapore", latitude: 1.3521, longitude: 103.8198, timeZone: "Asia/Singapore" },
+  { name: "Sydney, Australia", latitude: -33.8688, longitude: 151.2093, timeZone: "Australia/Sydney" },
+  { name: "Tokyo, Japan", latitude: 35.6762, longitude: 139.6503, timeZone: "Asia/Tokyo" },
+  { name: "Toronto, Canada", latitude: 43.6532, longitude: -79.3832, timeZone: "America/Toronto" },
+  { name: "Tromsø, Norway", latitude: 69.6492, longitude: 18.9553, timeZone: "Europe/Oslo" },
+  { name: "Vancouver, Canada", latitude: 49.2827, longitude: -123.1207, timeZone: "America/Vancouver" },
+];

@@ -46,6 +46,12 @@ const dark = {
   keyOperator: "#3F3F46",
   scrim: "rgba(9,9,11,0.6)",
   ringTrack: "#27272A",
+  solarDawn: "#FBBF6A",
+  solarDay: "#BAE6FD",
+  solarDusk: "#F59E7A",
+  solarTwilight: "#6366B5",
+  solarNight: "#172554",
+  solarPredawn: "#9B83C9",
 };
 
 export type ThemeColors = typeof dark;

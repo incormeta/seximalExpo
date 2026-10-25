@@ -57,6 +57,15 @@ can use their **Install app** option when available.
 
 ## Offline use and updates
 
+In Time → Clock, the last carousel face is **Daylight**. Choose a bundled city or
+enter decimal latitude, longitude, and an IANA time zone. The sun, digital time,
+date, and daylight rim then follow that location's local time. Your selection is
+saved on the device, and sunrise/sunset estimates are calculated offline for each
+day, including daylight saving changes and polar day/night. The rim uses daylight
+hues from sunrise to sunset and night hues otherwise; white marks show the two
+crossings. Estimates assume a sea-level horizon and can differ with terrain and
+weather.
+
 The production build generates an app manifest, regular and maskable icons, an
 Apple touch icon, and a Workbox service worker. It caches all exported screens,
 JavaScript, fonts, icons, and the alarm sound. The Learn screen uses a local
