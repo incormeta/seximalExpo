@@ -37,13 +37,39 @@ export function seximalToMs(t: { hours?: number; minutes?: number; seconds?: num
   );
 }
 
-export function nowSeximal(date = new Date()): SeximalTime {
-  const ms =
+/** Civil wall-clock time in the device's local time zone, including milliseconds. */
+export function localTimeMs(date: Date): number {
+  return (
     date.getHours() * HOUR_MS +
     date.getMinutes() * 60_000 +
     date.getSeconds() * 1000 +
-    date.getMilliseconds();
-  return msToSeximal(ms);
+    date.getMilliseconds()
+  );
+}
+
+export function nowSeximal(date = new Date()): SeximalTime {
+  return msToSeximal(localTimeMs(date));
+}
+
+/** Continuous progress in the same civil hours / seximal minutes as the clock. */
+export function clockProgress(date: Date): { day: number; hour: number; minute: number } {
+  const ms = localTimeMs(date);
+  return {
+    day: ms / (24 * HOUR_MS),
+    hour: (ms % HOUR_MS) / HOUR_MS,
+    minute: (ms % MINUTE_MS) / MINUTE_MS,
+  };
+}
+
+/** Elapsed real time between local midnights; DST days may be shorter or longer. */
+export function localDayProgress(date: Date): number {
+  const midnight = new Date(date);
+  midnight.setHours(0, 0, 0, 0);
+  // Start from the original date: midnight itself can be skipped by a DST change.
+  const nextMidnight = new Date(date);
+  nextMidnight.setDate(nextMidnight.getDate() + 1);
+  nextMidnight.setHours(0, 0, 0, 0);
+  return (date.getTime() - midnight.getTime()) / (nextMidnight.getTime() - midnight.getTime());
 }
 
 /** "HH:MM:SS" in base-6 digits (hours two digits, max "35" = 23). */
