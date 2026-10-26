@@ -1,10 +1,12 @@
 import Svg, { Circle, Line, Text as SvgText } from "react-native-svg";
 
+import { DaylightRim } from "@/src/components/time/daylight-rim";
 import { FaceId } from "@/src/seximal/clock-faces";
+import { Daylight } from "@/src/seximal/daylight";
 import { SeximalTime } from "@/src/seximal/time";
 import { fonts, useTheme } from "@/src/theme";
 
-type Props = { face: Exclude<FaceId, "progress" | "hue">; size: number; time: SeximalTime };
+type Props = { face: Exclude<FaceId, "progress" | "hue">; size: number; time: SeximalTime; daylight?: Daylight };
 
 const rad = (frac: number) => frac * Math.PI * 2 - Math.PI / 2;
 const pt = (c: number, frac: number, dist: number) => ({
@@ -19,7 +21,7 @@ const diurnalPt = (c: number, frac: number, dist: number) => ({
   y: c + Math.sin(Math.PI / 2 - frac * Math.PI * 2) * dist,
 });
 
-export function ClockFace({ face, size, time: t }: Props) {
+export function ClockFace({ face, size, time: t, daylight }: Props) {
   const { colors } = useTheme();
   // Scale the entire face together, including labels and stroke widths.
   const c = 180;
@@ -29,7 +31,7 @@ export function ClockFace({ face, size, time: t }: Props) {
   const minFrac = (t.minutes + t.seconds / 36 + t.instants / 1296) / 36;
   const secFrac = (t.seconds + t.instants / 36) / 36;
   const hourFrac =
-    face === 0 || face === "solar" || face === 3 ? (t.hours + minFrac) / 24 : ((t.hours % 12) + minFrac) / 12;
+    face === 0 || face === "solar" || face === "daylight" || face === 3 ? (t.hours + minFrac) / 24 : ((t.hours % 12) + minFrac) / 12;
 
   const tick = (key: string, frac: number, from: number, to: number, color: string, width: number) => {
     const a = pt(c, frac, from);
@@ -55,7 +57,7 @@ export function ClockFace({ face, size, time: t }: Props) {
 
   const elements: React.ReactNode[] = [];
 
-  if (face === 0 || face === "solar") {
+  if (face === 0 || face === "solar" || face === "daylight") {
     // A 24-hour outer dial and a 36-minute inner dial. Both run counterclockwise
     // from zero at the bottom; the solar variant replaces the hour hand.
     for (let h = 0; h < 24; h++) {
@@ -138,7 +140,7 @@ export function ClockFace({ face, size, time: t }: Props) {
     }
   }
 
-  const isReverseDiurnal = face === 0 || face === "solar";
+  const isReverseDiurnal = face === 0 || face === "solar" || face === "daylight";
   const handPt = isReverseDiurnal ? diurnalPt : pt;
   const hourLen = face === 0 ? r * 0.88 : face === 3 ? ri * 0.85 : r * 0.55;
   const minuteLen = isReverseDiurnal ? ri * 0.82 : r * 0.8;
@@ -152,9 +154,10 @@ export function ClockFace({ face, size, time: t }: Props) {
   return (
     <Svg width={size} height={size} viewBox="0 0 360 360" testID={`clock-face-${face}`}>
       <Circle cx={c} cy={c} r={r} stroke={colors.borderStrong} strokeWidth={1.5} fill={colors.surface} />
+      {face === "daylight" && daylight && <DaylightRim daylight={daylight} />}
       {elements}
-      {face !== "solar" && <Line x1={c} y1={c} x2={hourEnd.x} y2={hourEnd.y} stroke={colors.onSurface} strokeWidth={5} strokeLinecap="round" />}
-      {face === "solar" && (
+      {face !== "solar" && face !== "daylight" && <Line x1={c} y1={c} x2={hourEnd.x} y2={hourEnd.y} stroke={colors.onSurface} strokeWidth={5} strokeLinecap="round" />}
+      {(face === "solar" || face === "daylight") && (
         <>
           <Circle cx={sun.x} cy={sun.y} r={8} fill={colors.brand} />
           {Array.from({ length: 8 }, (_, i) => {

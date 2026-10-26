@@ -73,6 +73,30 @@ Resume buttons authorize browser audio, but device sound settings and browser
 policies still apply. The PWA does not schedule native local notifications or
 provide a guaranteed background alarm.
 
+## Daylight clock
+
+Daylight is the first of eight clock faces. It shares Solar's counterclockwise
+24-hour dial (midnight at the bottom, noon at the top), with a continuous
+night/twilight/day rim and sharp sunrise and sunset markers. The sun, digital
+clock, event times, and date all use the selected location's time zone. Other
+faces keep using device time.
+
+Use **Change location** to search the bundled city list or enter decimal latitude,
+longitude, and an IANA time zone such as `America/New_York`. North/east are
+positive; south/west are negative. London is the initial preset. Locations and
+the selected face save on the device; previous face selections migrate when
+Daylight is added. Arrows, swipe gestures, and the eight selectable indicators
+stay synchronized with the visible name and position count, including after
+rotation or resizing.
+
+Solar calculations run entirely on the device using NOAA solar-position
+equations and the standard −0.833° sunrise/sunset horizon. The browser's built-in
+time-zone data handles DST and fractional offsets. Polar day/night and dates
+with only one sunrise or sunset are supported; a dash means no event on that
+local date. Times are approximate for a level horizon at sea level; local terrain
+and atmospheric conditions can shift observed events. City selection, manual
+coordinates, and calculations work offline after the PWA's first cached load.
+
 ## Verify
 
 ```bash
@@ -82,6 +106,21 @@ npm test
 npm run build
 npm run preview
 ```
+
+The browser regression suite builds the production PWA and checks desktop and
+mobile navigation, keyboard/touch interaction, rotation, persistence, polar
+states, and offline reloads:
+
+```bash
+cd frontend
+npx playwright install chromium
+npm run test:pwa
+```
+
+To use an existing Chromium installation, set
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/path/to/chromium`. These checks simulate
+standalone viewport behavior; verify Home Screen installation on a physical
+iPhone as well.
 
 With the production preview open, check Calc, Convert, Time, and Learn. Wait for
 `/sw.js` to activate in browser developer tools, switch the browser to offline,

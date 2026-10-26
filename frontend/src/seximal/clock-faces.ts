@@ -1,10 +1,11 @@
 import { toSeximal } from "./base";
 import { localDayProgress } from "./time";
 
-export type FaceId = 0 | "solar" | 1 | 2 | 3 | "progress" | "hue";
+export type FaceId = "daylight" | 0 | "solar" | 1 | 2 | 3 | "progress" | "hue";
 
-// Append faces: existing persisted carousel indices must keep their meaning.
+// Persist stable face IDs; restoredFace migrates indices saved before Daylight.
 export const FACES: { id: FaceId; name: string; description: string }[] = [
+  { id: "daylight", name: "Daylight", description: "Diurnal · sunlight around your day" },
   { id: 0, name: "Face 0", description: "Diurnal · counterclockwise hours outside, minutes inside" },
   { id: "solar", name: "Solar face", description: "Diurnal · the sun marks the hour, minutes inside" },
   { id: 1, name: "Face 1", description: "Semi-diurnal · 12 hours around, thirds of an hour" },
@@ -69,4 +70,12 @@ export function hueClockColor(date: Date) {
     background: `hsl(${hue}, ${HUE_SATURATION * 100}%, ${HUE_LIGHTNESS * 100}%)`,
     rgb: hslToRgb(hue, HUE_SATURATION, HUE_LIGHTNESS),
   };
+}
+
+export function restoredFace(savedId: unknown, legacyIndex: unknown): number {
+  const index = FACES.findIndex(({ id }) => String(id) === savedId);
+  if (index >= 0) return index;
+  // The old key stored an array index; inserting Daylight must not change an
+  // existing user's selected face. New selections use stable IDs instead.
+  return typeof legacyIndex === "number" && Number.isInteger(legacyIndex) && legacyIndex >= 0 && legacyIndex < FACES.length - 1 ? legacyIndex + 1 : 0;
 }

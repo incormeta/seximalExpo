@@ -13,6 +13,7 @@
     "typecheck": "npm --prefix frontend run typecheck",
     "lint": "npm --prefix frontend run lint",
     "test": "npm --prefix frontend run test",
+    "test:pwa": "npm --prefix frontend run test:pwa",
     "doctor": "cd frontend && npx expo-doctor",
     "eas:build": "cd frontend && npx eas-cli build",
     "eas:submit": "cd frontend && npx eas-cli submit"
