@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { DAY_TICKS, FACES, HUE_LIGHTNESS, HUE_SATURATION, SEXIMAL_TICKS, contrastingForeground, hslToRgb, hueClockColor, progressToHue, relativeLuminance } from "./clock-faces";
+import { DAY_TICKS, FACES, HUE_LIGHTNESS, HUE_SATURATION, SEXIMAL_TICKS, contrastingForeground, hslToRgb, hueClockColor, progressToHue, relativeLuminance, restoredFace } from "./clock-faces";
 
-test("new faces append to the carousel without changing saved legacy indices", () => {
-  assert.deepEqual(FACES.map(({ id }) => id), [0, "solar", 1, 2, 3, "progress", "hue"]);
+test("Daylight leads the carousel while all legacy face selections migrate", () => {
+  const legacy = [0, "solar", 1, 2, 3, "progress", "hue"];
+  assert.deepEqual(FACES.map(({ id }) => id), ["daylight", ...legacy]);
+  for (const [index, id] of legacy.entries()) assert.equal(FACES[restoredFace(null, index)].id, id);
   assert.equal(new Set(FACES.map(({ id }) => id)).size, FACES.length);
 });
 
